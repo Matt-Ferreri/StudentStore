@@ -41,8 +41,8 @@ export function LoginForm() {
               className="w-full rounded-xl border border-sage bg-cream px-3 py-2 text-sm tracking-widest text-ink outline-none placeholder:text-sage placeholder:tracking-normal focus:border-burgundy"
             />
             <p className="text-xs text-ink">
-              While developing, open Mailpit at http://127.0.0.1:54324 and copy
-              the code. It is not sent to a real inbox yet.
+              We sent a 6-digit code to your Marist email. Check your inbox and
+              your spam folder.
             </p>
           </label>
         </>
