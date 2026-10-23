@@ -2,11 +2,10 @@
 
 import { redirect } from "next/navigation";
 
+import { displayNameFromEmail, normalizeMaristEmail } from "@/lib/marist-email";
 import { CAMPUS_SLUG, type CreateListingState } from "@/lib/types";
-import {
-  createWriteClient,
-  LISTING_IMAGES_BUCKET,
-} from "@/lib/supabase";
+import { LISTING_IMAGES_BUCKET } from "@/lib/supabase";
+import { createSessionClient } from "@/lib/supabase-server";
 import { extensionForPhoto, validateListing } from "@/lib/validation";
 
 export async function createListing(
@@ -18,12 +17,20 @@ export async function createListing(
     return { fieldErrors };
   }
 
-  const supabase = createWriteClient();
+  const supabase = await createSessionClient();
   if (!supabase) {
     return {
       error:
         "Posting is unavailable until Supabase is configured. See the README for the required environment variables.",
     };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const email = user?.email ? normalizeMaristEmail(user.email) : null;
+  if (!user || !email) {
+    return { error: "Sign in with a Marist email before posting." };
   }
 
   const { data: campus, error: campusError } = await supabase
@@ -47,8 +54,9 @@ export async function createListing(
       title: value.title,
       description: value.description,
       price_cents: value.priceCents,
-      poster_name: value.posterName,
-      contact: value.contact,
+      poster_name: displayNameFromEmail(email),
+      contact: email,
+      user_id: user.id,
     })
     .select("id")
     .single();

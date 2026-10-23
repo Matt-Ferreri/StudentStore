@@ -5,9 +5,7 @@ import { useActionState, type InputHTMLAttributes } from "react";
 import { createListing } from "@/app/actions";
 import type { CreateListingState, ListingKind } from "@/lib/types";
 import {
-  MAX_CONTACT_LENGTH,
   MAX_DESCRIPTION_LENGTH,
-  MAX_NAME_LENGTH,
   MAX_PHOTOS,
   MAX_TITLE_LENGTH,
 } from "@/lib/validation";
@@ -74,24 +72,6 @@ export function ListingForm({ initialKind }: { initialKind: ListingKind }) {
         placeholder="25.00"
         hint="Optional. Use dollars, like 25 or 12.50."
         error={state.fieldErrors?.price}
-      />
-
-      <Field
-        label="Your name"
-        name="posterName"
-        required
-        maxLength={MAX_NAME_LENGTH}
-        error={state.fieldErrors?.posterName}
-      />
-
-      <Field
-        label="How to reach you"
-        name="contact"
-        required
-        maxLength={MAX_CONTACT_LENGTH}
-        placeholder="Email, phone, or Instagram"
-        hint="People will use this until direct messages exist."
-        error={state.fieldErrors?.contact}
       />
 
       <label className="block space-y-1">

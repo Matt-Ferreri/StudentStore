@@ -5,7 +5,7 @@ StudentStore is a campus board where students buy and sell with each other. This
 - **For sale** for items students are offering
 - **Wishlist** for things students are looking for
 
-A listing needs a title, description, name, and a contact line. Price and photos are optional. Accounts, direct messages, and MyMarist sign-in are not part of this version.
+A listing needs a title and description. Price and photos are optional. Sign-in uses a Marist email (`first.last@marist.edu`) and a one-time code. The signed-in email is the name and contact on each post. Direct messages and MyMarist single sign-on are not part of this version.
 
 ## Run locally
 
@@ -37,7 +37,9 @@ Then start the app:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). The first screen is sign-in. Local Supabase does not deliver mail to a real inbox. After you request a code, open [Mailpit](http://127.0.0.1:54324) and copy the 6-digit code.
+
+`supabase start` also applies [`supabase/migrations/20261023190000_marist_login.sql`](supabase/migrations/20261023190000_marist_login.sql). That migration attaches each listing to a signed-in user and rejects emails that are not `first.last@marist.edu`.
 
 ### Hosted Supabase
 
@@ -49,7 +51,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 2. Create a [Supabase](https://supabase.com) project.
 
-3. In the Supabase SQL editor, run [`supabase/migrations/20261023143000_studentstore.sql`](supabase/migrations/20261023143000_studentstore.sql). That creates the tables, seeds Marist, and adds a public `listing-images` storage bucket.
+3. In the Supabase SQL editor, run [`supabase/migrations/20261023143000_studentstore.sql`](supabase/migrations/20261023143000_studentstore.sql), then [`supabase/migrations/20261023190000_marist_login.sql`](supabase/migrations/20261023190000_marist_login.sql). In Authentication hooks, enable the before-user-created hook `public.enforce_marist_email`. Hosted projects also need SMTP before codes reach a real inbox. The login page stays the same.
 
 4. Copy the environment template and fill in the values from **Project Settings → API**:
 
@@ -61,7 +63,7 @@ Open [http://localhost:3000](http://localhost:3000).
    | --- | --- |
    | `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Server-side reads. Row level security only allows public `select`. |
-   | `SUPABASE_SERVICE_ROLE_KEY` | Server-only writes from the post form. Do not commit this or expose it in the browser. |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Kept for server administration. Posting uses the signed-in session. Do not commit this or expose it in the browser. |
 
 5. Start the app:
 

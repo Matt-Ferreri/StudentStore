@@ -28,8 +28,6 @@ export type FieldName =
   | "title"
   | "description"
   | "price"
-  | "posterName"
-  | "contact"
   | "photos";
 
 export type FieldErrors = Partial<Record<FieldName, string>>;

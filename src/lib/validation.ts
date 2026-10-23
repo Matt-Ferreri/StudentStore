@@ -8,8 +8,6 @@ export const MAX_PHOTOS = 4;
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const MAX_TITLE_LENGTH = 120;
 export const MAX_DESCRIPTION_LENGTH = 4000;
-export const MAX_NAME_LENGTH = 80;
-export const MAX_CONTACT_LENGTH = 200;
 export const MAX_PRICE_CENTS = 10_000_000;
 
 const PHOTO_TYPES = new Map<string, string>([
@@ -23,8 +21,6 @@ export type ValidListing = {
   title: string;
   description: string;
   priceCents: number | null;
-  posterName: string;
-  contact: string;
   photos: File[];
 };
 
@@ -41,8 +37,6 @@ export function validateListing(formData: FormData): {
   const title = stringField(formData, "title");
   const description = stringField(formData, "description");
   const priceRaw = stringField(formData, "price");
-  const posterName = stringField(formData, "posterName");
-  const contact = stringField(formData, "contact");
 
   const kind = LISTING_KINDS.find((value) => value === kindRaw);
   if (!kind) {
@@ -66,18 +60,6 @@ export function validateListing(formData: FormData): {
     fieldErrors.price = "Enter a price like 25 or 12.50, or leave it blank.";
   } else if (priceCents !== null && priceCents > MAX_PRICE_CENTS) {
     fieldErrors.price = "Enter a price of $100,000 or less.";
-  }
-
-  if (!posterName) {
-    fieldErrors.posterName = "Add your name.";
-  } else if (posterName.length > MAX_NAME_LENGTH) {
-    fieldErrors.posterName = `Keep your name under ${MAX_NAME_LENGTH} characters.`;
-  }
-
-  if (!contact) {
-    fieldErrors.contact = "Add a way for people to reach you.";
-  } else if (contact.length > MAX_CONTACT_LENGTH) {
-    fieldErrors.contact = `Keep the contact line under ${MAX_CONTACT_LENGTH} characters.`;
   }
 
   const photos = formData
@@ -107,8 +89,6 @@ export function validateListing(formData: FormData): {
       title,
       description,
       priceCents,
-      posterName,
-      contact,
       photos,
     },
   };
