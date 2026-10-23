@@ -1,0 +1,173 @@
+"use client";
+
+import { useActionState, type InputHTMLAttributes } from "react";
+
+import { createListing } from "@/app/actions";
+import type { CreateListingState, ListingKind } from "@/lib/types";
+import {
+  MAX_CONTACT_LENGTH,
+  MAX_DESCRIPTION_LENGTH,
+  MAX_NAME_LENGTH,
+  MAX_PHOTOS,
+  MAX_TITLE_LENGTH,
+} from "@/lib/validation";
+
+const initialState: CreateListingState = {};
+
+export function ListingForm({ initialKind }: { initialKind: ListingKind }) {
+  const [state, action, pending] = useActionState(createListing, initialState);
+
+  return (
+    <form action={action} className="space-y-5">
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-ink">Board</legend>
+        <div className="flex flex-wrap gap-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="kind"
+              value="for_sale"
+              defaultChecked={initialKind === "for_sale"}
+              className="accent-burgundy"
+            />
+            For sale
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="kind"
+              value="wishlist"
+              defaultChecked={initialKind === "wishlist"}
+              className="accent-burgundy"
+            />
+            Wishlist
+          </label>
+        </div>
+        <FieldError message={state.fieldErrors?.kind} />
+      </fieldset>
+
+      <Field
+        label="Title"
+        name="title"
+        required
+        maxLength={MAX_TITLE_LENGTH}
+        error={state.fieldErrors?.title}
+      />
+
+      <label className="block space-y-1">
+        <span className="text-sm font-medium text-ink">Description</span>
+        <textarea
+          name="description"
+          required
+          rows={5}
+          maxLength={MAX_DESCRIPTION_LENGTH}
+          className={inputClass}
+        />
+        <FieldError message={state.fieldErrors?.description} />
+      </label>
+
+      <Field
+        label="Price"
+        name="price"
+        optional
+        inputMode="decimal"
+        placeholder="25.00"
+        hint="Optional. Use dollars, like 25 or 12.50."
+        error={state.fieldErrors?.price}
+      />
+
+      <Field
+        label="Your name"
+        name="posterName"
+        required
+        maxLength={MAX_NAME_LENGTH}
+        error={state.fieldErrors?.posterName}
+      />
+
+      <Field
+        label="How to reach you"
+        name="contact"
+        required
+        maxLength={MAX_CONTACT_LENGTH}
+        placeholder="Email, phone, or Instagram"
+        hint="People will use this until direct messages exist."
+        error={state.fieldErrors?.contact}
+      />
+
+      <label className="block space-y-1">
+        <span className="text-sm font-medium text-ink">
+          Photos <span className="font-normal text-ink">(optional)</span>
+        </span>
+        <input
+          type="file"
+          name="photos"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className="block w-full text-sm text-ink file:mr-3 file:rounded-full file:border-0 file:bg-sage file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink"
+        />
+        <p className="text-xs text-ink">
+          Up to {MAX_PHOTOS} photos. JPEG, PNG, or WebP. 5 MB each.
+        </p>
+        <FieldError message={state.fieldErrors?.photos} />
+      </label>
+
+      {state.error ? (
+        <p className="rounded-xl border border-burgundy bg-cream px-3 py-2 text-sm text-burgundy" role="alert">
+          {state.error}
+        </p>
+      ) : null}
+
+      <button
+        type="submit"
+        disabled={pending}
+        className="rounded-full bg-burgundy px-5 py-2.5 text-sm font-medium text-cream hover:bg-ink disabled:opacity-60"
+      >
+        {pending ? "Posting…" : "Post listing"}
+      </button>
+    </form>
+  );
+}
+
+function Field({
+  label,
+  name,
+  error,
+  hint,
+  optional,
+  ...inputProps
+}: {
+  label: string;
+  name: string;
+  error?: string;
+  hint?: string;
+  optional?: boolean;
+} & InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className="block space-y-1">
+      <span className="text-sm font-medium text-ink">
+        {label}{" "}
+        {optional ? (
+          <span className="font-normal text-ink">(optional)</span>
+        ) : null}
+      </span>
+      <input name={name} className={inputClass} {...inputProps} />
+      {hint ? <p className="text-xs text-ink">{hint}</p> : null}
+      <FieldError message={error} />
+    </label>
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <p className="text-sm text-burgundy" role="alert">
+      {message}
+    </p>
+  );
+}
+
+const inputClass =
+  "w-full rounded-xl border border-sage bg-cream px-3 py-2 text-sm text-ink outline-none placeholder:text-sage focus:border-burgundy";

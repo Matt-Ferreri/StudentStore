@@ -1,0 +1,105 @@
+"use server";
+
+import { redirect } from "next/navigation";
+
+import { CAMPUS_SLUG, type CreateListingState } from "@/lib/types";
+import {
+  createWriteClient,
+  LISTING_IMAGES_BUCKET,
+} from "@/lib/supabase";
+import { extensionForPhoto, validateListing } from "@/lib/validation";
+
+export async function createListing(
+  _previous: CreateListingState,
+  formData: FormData,
+): Promise<CreateListingState> {
+  const { fieldErrors, value } = validateListing(formData);
+  if (!value) {
+    return { fieldErrors };
+  }
+
+  const supabase = createWriteClient();
+  if (!supabase) {
+    return {
+      error:
+        "Posting is unavailable until Supabase is configured. See the README for the required environment variables.",
+    };
+  }
+
+  const { data: campus, error: campusError } = await supabase
+    .from("campuses")
+    .select("id")
+    .eq("slug", CAMPUS_SLUG)
+    .maybeSingle();
+
+  if (campusError || !campus) {
+    return {
+      error:
+        "Marist is not in the database yet. Run the SQL migration from the README, then try again.",
+    };
+  }
+
+  const { data: listing, error: insertError } = await supabase
+    .from("listings")
+    .insert({
+      campus_id: campus.id,
+      kind: value.kind,
+      title: value.title,
+      description: value.description,
+      price_cents: value.priceCents,
+      poster_name: value.posterName,
+      contact: value.contact,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !listing) {
+    return { error: "Could not save this listing. Try again." };
+  }
+
+  const uploadedPaths: string[] = [];
+
+  try {
+    for (const [index, photo] of value.photos.entries()) {
+      const extension = extensionForPhoto(photo.type);
+      if (!extension) {
+        throw new Error("Unsupported photo type.");
+      }
+
+      const storagePath = `${listing.id}/${index}.${extension}`;
+      const bytes = Buffer.from(await photo.arrayBuffer());
+      const { error: uploadError } = await supabase.storage
+        .from(LISTING_IMAGES_BUCKET)
+        .upload(storagePath, bytes, {
+          contentType: photo.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      uploadedPaths.push(storagePath);
+
+      const { error: imageError } = await supabase.from("listing_images").insert({
+        listing_id: listing.id,
+        storage_path: storagePath,
+        sort_order: index,
+      });
+
+      if (imageError) {
+        throw new Error(imageError.message);
+      }
+    }
+  } catch {
+    if (uploadedPaths.length > 0) {
+      await supabase.storage.from(LISTING_IMAGES_BUCKET).remove(uploadedPaths);
+    }
+    await supabase.from("listings").delete().eq("id", listing.id);
+    return {
+      error: "Could not save the photos, so the listing was not posted.",
+    };
+  }
+
+  redirect(`/listings/${listing.id}`);
+}

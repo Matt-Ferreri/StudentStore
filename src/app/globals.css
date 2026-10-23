@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-burgundy: #7a1f36;
+  --color-sage: #a8b5a2;
+  --color-ink: #262626;
+  --color-cream: #f7f3eb;
+  --color-background: #f7f3eb;
+  --color-foreground: #262626;
+  --font-sans: var(--font-geist-sans);
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans), sans-serif;
+}
