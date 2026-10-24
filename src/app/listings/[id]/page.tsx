@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { ListingChat } from "@/components/listing-chat";
 import { SetupNotice } from "@/components/setup-notice";
+import { parseChatId } from "@/lib/chat";
 import { boardPath, formatPostedAt, formatPrice, kindLabel } from "@/lib/format";
 import { getListing } from "@/lib/listings";
 
@@ -22,22 +24,21 @@ export async function generateMetadata({
 
 export default function ListingPage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+  searchParams,
+}: PageProps<"/listings/[id]">) {
   return (
     <Suspense fallback={<p className="text-ink">Loading listing…</p>}>
-      <ListingDetail params={params} />
+      <ListingDetail params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
 async function ListingDetail({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+  searchParams,
+}: Pick<PageProps<"/listings/[id]">, "params" | "searchParams">) {
   const { id } = await params;
+  const { chat } = await searchParams;
   const result = await getListing(id);
 
   if ("configError" in result) {
@@ -110,7 +111,14 @@ async function ListingDetail({
           <dt className="text-xs font-medium uppercase tracking-wide text-burgundy">
             Contact
           </dt>
-          <dd className="mt-1 text-ink">{listing.contact}</dd>
+          <dd className="mt-1">
+            <a
+              href={`mailto:${encodeURIComponent(listing.contact)}`}
+              className="text-ink underline"
+            >
+              {listing.contact}
+            </a>
+          </dd>
         </div>
         <div>
           <dt className="text-xs font-medium uppercase tracking-wide text-burgundy">
@@ -119,6 +127,8 @@ async function ListingDetail({
           <dd className="mt-1 text-ink">{formatPostedAt(listing.createdAt)}</dd>
         </div>
       </dl>
+
+      <ListingChat listing={listing} chatId={parseChatId(chat)} />
     </article>
   );
 }

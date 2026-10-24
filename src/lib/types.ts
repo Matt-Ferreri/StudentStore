@@ -13,6 +13,7 @@ export type ListingImage = {
 
 export type Listing = {
   id: string;
+  userId: string;
   kind: ListingKind;
   title: string;
   description: string;
@@ -21,6 +22,43 @@ export type Listing = {
   contact: string;
   createdAt: string;
   images: ListingImage[];
+};
+
+export const MAX_MESSAGE_LENGTH = 2000;
+
+export type ChatMessage = {
+  id: string;
+  body: string;
+  createdAt: string;
+  mine: boolean;
+};
+
+export type ListingConversation = {
+  id: string;
+  buyerName: string;
+  buyerEmail: string;
+  updatedAt: string;
+};
+
+export type ListingChatView = {
+  viewerIsOwner: boolean;
+  conversations: ListingConversation[];
+  activeId: string | null;
+  messages: ChatMessage[];
+};
+
+export type InboxThread = {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  otherName: string;
+  otherEmail: string;
+  preview: string;
+  updatedAt: string;
+};
+
+export type SendMessageState = {
+  error?: string;
 };
 
 export type FieldName =

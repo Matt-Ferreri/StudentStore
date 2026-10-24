@@ -12,7 +12,8 @@ export default function Home() {
         </h1>
         <p className="text-lg leading-8 text-ink">
           StudentStore is a campus board. List something you are selling, or
-          post what you are hoping to find. Price and photos are optional.
+          post what you are hoping to find. Price and photos are optional. On
+          each listing you can email the student or chat with them in the app.
         </p>
       </section>
 

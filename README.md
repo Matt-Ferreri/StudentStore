@@ -5,7 +5,7 @@ StudentStore is a campus board where students buy and sell with each other. This
 - **For sale** for items students are offering
 - **Wishlist** for things students are looking for
 
-A listing needs a title and description. Price and photos are optional. Sign-in uses a Marist email (`first.last@marist.edu`) and a one-time code. The signed-in email is the name and contact on each post. Direct messages and MyMarist single sign-on are not part of this version.
+A listing needs a title and description. Price and photos are optional. Sign-in uses a Marist email (`first.last@marist.edu`) and a one-time code. The signed-in email is the name and contact on each post, and students can also chat on the listing. MyMarist single sign-on is not part of this version.
 
 ## Run locally
 
@@ -43,7 +43,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The first screen is sign-in. With SMTP configured, the 6-digit code is sent to the Marist inbox. Check spam if it does not arrive. Mailpit at [http://127.0.0.1:54324](http://127.0.0.1:54324) only receives codes when `[auth.email.smtp]` in `supabase/config.toml` is turned off.
 
-`supabase start` also applies [`supabase/migrations/20261023190000_marist_login.sql`](supabase/migrations/20261023190000_marist_login.sql). That migration attaches each listing to a signed-in user and rejects emails that are not `first.last@marist.edu`.
+`supabase start` also applies [`supabase/migrations/20261023190000_marist_login.sql`](supabase/migrations/20261023190000_marist_login.sql) and [`supabase/migrations/20261024130000_listing_chat.sql`](supabase/migrations/20261024130000_listing_chat.sql). The login migration attaches each listing to a signed-in user and rejects emails that are not `first.last@marist.edu`. The chat migration adds private conversations on each listing. If Supabase is already running, apply the new file with `npx supabase migration up`.
 
 ### Hosted Supabase
 
@@ -55,7 +55,7 @@ Open [http://localhost:3000](http://localhost:3000). The first screen is sign-in
 
 2. Create a [Supabase](https://supabase.com) project.
 
-3. In the Supabase SQL editor, run [`supabase/migrations/20261023143000_studentstore.sql`](supabase/migrations/20261023143000_studentstore.sql), then [`supabase/migrations/20261023190000_marist_login.sql`](supabase/migrations/20261023190000_marist_login.sql). In Authentication hooks, enable the before-user-created hook `public.enforce_marist_email`.
+3. In the Supabase SQL editor, run [`supabase/migrations/20261023143000_studentstore.sql`](supabase/migrations/20261023143000_studentstore.sql), then [`supabase/migrations/20261023190000_marist_login.sql`](supabase/migrations/20261023190000_marist_login.sql), then [`supabase/migrations/20261024130000_listing_chat.sql`](supabase/migrations/20261024130000_listing_chat.sql). In Authentication hooks, enable the before-user-created hook `public.enforce_marist_email`.
 
 4. In Authentication → Emails → SMTP Settings, send through the same Gmail account: host `smtp.gmail.com`, port `465`, username and sender email `studentstore.marist@gmail.com`, password the Gmail App Password, sender name `StudentStore`. Under Authentication → Rate Limits, set emails sent per hour to `30`. Paste the subject `Your StudentStore code` and the HTML from [`supabase/templates/magic_link.html`](supabase/templates/magic_link.html) into the Magic Link template. `config.toml` does not apply to the hosted project on its own.
 

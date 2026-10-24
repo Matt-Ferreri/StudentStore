@@ -9,6 +9,7 @@ type ImageRow = {
 
 type ListingRow = {
   id: string;
+  user_id: string;
   kind: ListingKind;
   title: string;
   description: string;
@@ -21,6 +22,7 @@ type ListingRow = {
 
 const listingSelect = `
   id,
+  user_id,
   kind,
   title,
   description,
@@ -108,6 +110,7 @@ function toListing(row: ListingRow): Listing {
 
   return {
     id: row.id,
+    userId: row.user_id,
     kind: row.kind,
     title: row.title,
     description: row.description,
