@@ -1,5 +1,10 @@
 import { listingImageUrl, createReadClient } from "@/lib/supabase";
-import { CAMPUS_SLUG, type Listing, type ListingKind } from "@/lib/types";
+import {
+  CAMPUS_SLUG,
+  type Listing,
+  type ListingKind,
+  type ListingStatus,
+} from "@/lib/types";
 
 type ImageRow = {
   id: string;
@@ -11,6 +16,8 @@ type ListingRow = {
   id: string;
   user_id: string;
   kind: ListingKind;
+  status: ListingStatus;
+  sold_to_id: string | null;
   title: string;
   description: string;
   price_cents: number | null;
@@ -24,6 +31,8 @@ const listingSelect = `
   id,
   user_id,
   kind,
+  status,
+  sold_to_id,
   title,
   description,
   price_cents,
@@ -103,6 +112,21 @@ async function maristCampusId(
   return data.id as string;
 }
 
+export function viewerCanRemoveListing(
+  listing: Pick<Listing, "userId" | "kind" | "status" | "soldToId">,
+  viewerId: string,
+): boolean {
+  if (listing.userId === viewerId) {
+    return true;
+  }
+
+  return (
+    listing.kind === "for_sale" &&
+    listing.status === "sold" &&
+    listing.soldToId === viewerId
+  );
+}
+
 function toListing(row: ListingRow): Listing {
   const images = [...(row.listing_images ?? [])].sort(
     (left, right) => left.sort_order - right.sort_order,
@@ -112,6 +136,8 @@ function toListing(row: ListingRow): Listing {
     id: row.id,
     userId: row.user_id,
     kind: row.kind,
+    status: row.status,
+    soldToId: row.sold_to_id,
     title: row.title,
     description: row.description,
     priceCents: row.price_cents,

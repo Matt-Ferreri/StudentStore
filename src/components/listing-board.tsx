@@ -74,6 +74,7 @@ export async function ListingBoard({ kind }: { kind: ListingKind }) {
                   <div className="flex flex-1 flex-col gap-2 p-4">
                     <p className="text-xs font-medium uppercase tracking-wide text-burgundy">
                       {kindLabel(listing.kind)}
+                      {listing.status === "sold" ? " · Sold" : ""}
                     </p>
                     <h2 className="text-lg font-semibold text-ink">
                       {listing.title}

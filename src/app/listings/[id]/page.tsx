@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { ListingChat } from "@/components/listing-chat";
+import { ListingClosure } from "@/components/listing-closure";
 import { SetupNotice } from "@/components/setup-notice";
 import { parseChatId } from "@/lib/chat";
 import { boardPath, formatPostedAt, formatPrice, kindLabel } from "@/lib/format";
@@ -66,6 +67,7 @@ async function ListingDetail({
       <header className="space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-burgundy">
           {kindLabel(listing.kind)}
+          {listing.status === "sold" ? " · Sold" : ""}
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-ink">
           {listing.title}
@@ -127,6 +129,8 @@ async function ListingDetail({
           <dd className="mt-1 text-ink">{formatPostedAt(listing.createdAt)}</dd>
         </div>
       </dl>
+
+      <ListingClosure listing={listing} />
 
       <ListingChat listing={listing} chatId={parseChatId(chat)} />
     </article>
