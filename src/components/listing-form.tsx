@@ -3,7 +3,7 @@
 import { useActionState, type InputHTMLAttributes } from "react";
 
 import { createListing } from "@/app/actions";
-import type { CreateListingState, ListingKind } from "@/lib/types";
+import type { CreateListingState } from "@/lib/types";
 import {
   MAX_DESCRIPTION_LENGTH,
   MAX_PHOTOS,
@@ -12,38 +12,11 @@ import {
 
 const initialState: CreateListingState = {};
 
-export function ListingForm({ initialKind }: { initialKind: ListingKind }) {
+export function ListingForm() {
   const [state, action, pending] = useActionState(createListing, initialState);
 
   return (
     <form action={action} className="space-y-5">
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-ink">Board</legend>
-        <div className="flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="radio"
-              name="kind"
-              value="for_sale"
-              defaultChecked={initialKind === "for_sale"}
-              className="accent-burgundy"
-            />
-            For sale
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="radio"
-              name="kind"
-              value="wishlist"
-              defaultChecked={initialKind === "wishlist"}
-              className="accent-burgundy"
-            />
-            Wishlist
-          </label>
-        </div>
-        <FieldError message={state.fieldErrors?.kind} />
-      </fieldset>
-
       <Field
         label="Title"
         name="title"

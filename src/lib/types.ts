@@ -67,12 +67,7 @@ export type SendMessageState = {
   error?: string;
 };
 
-export type FieldName =
-  | "kind"
-  | "title"
-  | "description"
-  | "price"
-  | "photos";
+export type FieldName = "title" | "description" | "price" | "photos";
 
 export type FieldErrors = Partial<Record<FieldName, string>>;
 

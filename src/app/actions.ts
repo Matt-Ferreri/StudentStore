@@ -7,6 +7,7 @@ import { CAMPUS_SLUG, type CreateListingState } from "@/lib/types";
 import { LISTING_IMAGES_BUCKET } from "@/lib/supabase";
 import { createSessionClient } from "@/lib/supabase-server";
 import { extensionForPhoto, validateListing } from "@/lib/validation";
+import { notifyMatchingWishes } from "@/lib/wish-alerts";
 
 export async function createListing(
   _previous: CreateListingState,
@@ -107,6 +108,15 @@ export async function createListing(
     return {
       error: "Could not save the photos, so the listing was not posted.",
     };
+  }
+
+  if (value.kind === "for_sale") {
+    await notifyMatchingWishes({
+      id: listing.id,
+      title: value.title,
+      description: value.description,
+      posterId: user.id,
+    });
   }
 
   redirect(`/listings/${listing.id}`);

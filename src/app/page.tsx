@@ -11,9 +11,10 @@ export default function Home() {
           Buy and sell with students on your campus.
         </h1>
         <p className="text-lg leading-8 text-ink">
-          StudentStore is a campus board. List something you are selling, or
-          post what you are hoping to find. Price and photos are optional. On
-          each listing you can email the student or chat with them in the app.
+          StudentStore is a campus board. List something you are selling, and
+          keep a private wishlist. When a new listing uses the same words, we
+          email you a link. Price and photos are optional. On each listing you
+          can email the student or chat with them in the app.
         </p>
       </section>
 
@@ -34,7 +35,8 @@ export default function Home() {
         >
           <h2 className="text-2xl font-semibold text-ink">Wishlist</h2>
           <p className="mt-2 text-ink">
-            Tell campus what you are looking for, from textbooks to furniture.
+            Keep a private list of what you are looking for. We email you when
+            a student posts something with the same words.
           </p>
         </Link>
       </div>

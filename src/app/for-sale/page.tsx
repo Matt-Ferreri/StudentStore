@@ -9,7 +9,7 @@ export const metadata = {
 export default function ForSalePage() {
   return (
     <Suspense fallback={<BoardFallback title="For sale" />}>
-      <ListingBoard kind="for_sale" />
+      <ListingBoard />
     </Suspense>
   );
 }

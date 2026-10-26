@@ -2,26 +2,17 @@ import Link from "next/link";
 
 import { formatPrice, kindLabel } from "@/lib/format";
 import { listListings } from "@/lib/listings";
-import type { ListingKind } from "@/lib/types";
 import { SetupNotice } from "@/components/setup-notice";
 
-const copy: Record<ListingKind, { heading: string; lede: string; empty: string }> =
-  {
-    for_sale: {
-      heading: "For sale",
-      lede: "Textbooks, furniture, tickets, and anything else Marist students are selling.",
-      empty: "Nothing is for sale yet. Be the first to post.",
-    },
-    wishlist: {
-      heading: "Wishlist",
-      lede: "Post what you are looking for so another student can offer it.",
-      empty: "No one has posted a wish yet.",
-    },
-  };
+const copy = {
+  heading: "For sale",
+  lede: "Textbooks, furniture, tickets, and anything else Marist students are selling.",
+  empty: "Nothing is for sale yet. Be the first to post.",
+};
 
-export async function ListingBoard({ kind }: { kind: ListingKind }) {
-  const result = await listListings(kind);
-  const text = copy[kind];
+export async function ListingBoard() {
+  const result = await listListings("for_sale");
+  const text = copy;
 
   return (
     <section className="space-y-6">
@@ -33,10 +24,10 @@ export async function ListingBoard({ kind }: { kind: ListingKind }) {
           <p className="mt-2 text-ink">{text.lede}</p>
         </div>
         <Link
-          href={`/listings/new?kind=${kind}`}
+          href="/listings/new"
           className="rounded-full bg-burgundy px-4 py-2 text-sm font-medium text-cream hover:bg-ink"
         >
-          Post {kind === "for_sale" ? "an item" : "a wish"}
+          Post an item
         </Link>
       </div>
 
@@ -96,14 +87,11 @@ export async function ListingBoard({ kind }: { kind: ListingKind }) {
       )}
 
       <p className="text-sm text-ink">
-        Browse the other board on{" "}
-        <Link
-          href={kind === "for_sale" ? "/wishlist" : "/for-sale"}
-          className="font-medium text-burgundy underline"
-        >
-          {kind === "for_sale" ? "Wishlist" : "For sale"}
-        </Link>
-        .
+        Looking for something that is not here yet? Add it on your{" "}
+        <Link href="/wishlist" className="font-medium text-burgundy underline">
+          wishlist
+        </Link>{" "}
+        and we will email you when a similar listing is posted.
       </p>
     </section>
   );

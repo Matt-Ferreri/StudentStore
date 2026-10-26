@@ -1,8 +1,4 @@
-import {
-  LISTING_KINDS,
-  type FieldErrors,
-  type ListingKind,
-} from "@/lib/types";
+import type { FieldErrors, ListingKind } from "@/lib/types";
 
 export const MAX_PHOTOS = 4;
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -33,15 +29,9 @@ export function validateListing(formData: FormData): {
   value: ValidListing | null;
 } {
   const fieldErrors: FieldErrors = {};
-  const kindRaw = stringField(formData, "kind");
   const title = stringField(formData, "title");
   const description = stringField(formData, "description");
   const priceRaw = stringField(formData, "price");
-
-  const kind = LISTING_KINDS.find((value) => value === kindRaw);
-  if (!kind) {
-    fieldErrors.kind = "Choose For sale or Wishlist.";
-  }
 
   if (!title) {
     fieldErrors.title = "Add a title.";
@@ -74,18 +64,14 @@ export function validateListing(formData: FormData): {
     fieldErrors.photos = "Each photo must be 5 MB or smaller.";
   }
 
-  if (
-    !kind ||
-    Object.keys(fieldErrors).length > 0 ||
-    priceCents === "invalid"
-  ) {
+  if (Object.keys(fieldErrors).length > 0 || priceCents === "invalid") {
     return { fieldErrors, value: null };
   }
 
   return {
     fieldErrors,
     value: {
-      kind,
+      kind: "for_sale" satisfies ListingKind,
       title,
       description,
       priceCents,
