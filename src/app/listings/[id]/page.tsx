@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { ListingChat } from "@/components/listing-chat";
 import { ListingClosure } from "@/components/listing-closure";
+import { ListingModeration } from "@/components/listing-moderation";
 import { SetupNotice } from "@/components/setup-notice";
 import { parseChatId } from "@/lib/chat";
 import { boardPath, formatPostedAt, formatPrice, kindLabel } from "@/lib/format";
@@ -129,6 +130,8 @@ async function ListingDetail({
           <dd className="mt-1 text-ink">{formatPostedAt(listing.createdAt)}</dd>
         </div>
       </dl>
+
+      <ListingModeration listing={listing} />
 
       <ListingClosure listing={listing} />
 

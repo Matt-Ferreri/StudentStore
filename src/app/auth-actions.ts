@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 
+import { signInEmail } from "@/lib/admins";
 import { normalizeMaristEmail } from "@/lib/marist-email";
+import { syncAdminEmails } from "@/lib/sync-admin-emails";
 import { createSessionClient } from "@/lib/supabase-server";
 
 export type LoginState = {
@@ -15,10 +17,19 @@ export async function login(
   _previous: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
-  const email = normalizeMaristEmail(stringField(formData, "email"));
+  const email = signInEmail(stringField(formData, "email"));
+  const synced = await syncAdminEmails();
   if (!email) {
     return {
       error: "Use a Marist email like first.last@marist.edu.",
+    };
+  }
+
+  if (!normalizeMaristEmail(email) && !synced) {
+    return {
+      error:
+        "Sign-in is unavailable until Supabase is configured. See the README.",
+      email,
     };
   }
 

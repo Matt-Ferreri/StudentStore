@@ -32,6 +32,8 @@ export type Listing = {
 
 export const MAX_MESSAGE_LENGTH = 2000;
 
+export const MAX_REPORT_REASON = 500;
+
 export type ChatMessage = {
   id: string;
   body: string;
@@ -78,4 +80,9 @@ export type CreateListingState = {
 
 export type ListingActionState = {
   error?: string;
+};
+
+export type ReportListingState = {
+  error?: string;
+  reported?: boolean;
 };
