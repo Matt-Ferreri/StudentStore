@@ -1,6 +1,6 @@
 export const CAMPUS_SLUG = "marist";
 
-export const LISTING_KINDS = ["for_sale", "wishlist"] as const;
+export const LISTING_KINDS = ["for_sale", "wishlist", "housing"] as const;
 
 export type ListingKind = (typeof LISTING_KINDS)[number];
 
@@ -23,6 +23,8 @@ export type Listing = {
   soldToId: string | null;
   title: string;
   description: string;
+  peopleNeeded: number | null;
+  address: string | null;
   priceCents: number | null;
   posterName: string;
   contact: string;
@@ -69,7 +71,15 @@ export type SendMessageState = {
   error?: string;
 };
 
-export type FieldName = "title" | "description" | "price" | "photos";
+export type FieldName =
+  | "title"
+  | "description"
+  | "price"
+  | "photos"
+  | "people"
+  | "address"
+  | "rent"
+  | "notes";
 
 export type FieldErrors = Partial<Record<FieldName, string>>;
 

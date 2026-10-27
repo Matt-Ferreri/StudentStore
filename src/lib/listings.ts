@@ -20,6 +20,8 @@ type ListingRow = {
   sold_to_id: string | null;
   title: string;
   description: string;
+  people_needed: number | null;
+  address: string | null;
   price_cents: number | null;
   poster_name: string;
   contact: string;
@@ -35,6 +37,8 @@ const listingSelect = `
   sold_to_id,
   title,
   description,
+  people_needed,
+  address,
   price_cents,
   poster_name,
   contact,
@@ -140,6 +144,8 @@ function toListing(row: ListingRow): Listing {
     soldToId: row.sold_to_id,
     title: row.title,
     description: row.description,
+    peopleNeeded: row.people_needed,
+    address: row.address,
     priceCents: row.price_cents,
     posterName: row.poster_name,
     contact: row.contact,

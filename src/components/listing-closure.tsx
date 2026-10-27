@@ -26,11 +26,13 @@ export async function ListingClosure({ listing }: { listing: Listing }) {
     <section className="space-y-4 rounded-2xl border border-sage bg-cream p-5">
       <div className="max-w-2xl space-y-1">
         <h2 className="text-lg font-semibold text-ink">
-          {listing.kind === "wishlist"
-            ? "Bought this?"
-            : isBuyer
-              ? "You bought this"
-              : "Sold this?"}
+          {listing.kind === "housing"
+            ? "Lease filled?"
+            : listing.kind === "wishlist"
+              ? "Bought this?"
+              : isBuyer
+                ? "You bought this"
+                : "Sold this?"}
         </h2>
         <p className="text-sm leading-6 text-ink">
           {closureCopy(listing, isBuyer, soldTo, buyers.length)}
@@ -48,11 +50,19 @@ export async function ListingClosure({ listing }: { listing: Listing }) {
       {viewerCanRemoveListing(listing, user.id) ? (
         <RemoveListingForm
           listingId={listing.id}
-          label={listing.kind === "wishlist" ? "Remove wish" : "Remove listing"}
+          label={
+            listing.kind === "wishlist"
+              ? "Remove wish"
+              : listing.kind === "housing"
+                ? "Remove post"
+                : "Remove listing"
+          }
           confirmMessage={
             listing.kind === "wishlist"
               ? "Remove this wish from StudentStore? This deletes it for everyone, including the database."
-              : "Remove this listing from StudentStore? This deletes it for everyone, including the database."
+              : listing.kind === "housing"
+                ? "Remove this lease from StudentStore? This deletes it for everyone, including the database."
+                : "Remove this listing from StudentStore? This deletes it for everyone, including the database."
           }
         />
       ) : null}
@@ -66,6 +76,10 @@ function closureCopy(
   soldTo: { name: string; email: string } | null,
   buyerCount: number,
 ): string {
+  if (listing.kind === "housing") {
+    return "If the lease is filled or you no longer need roommates, remove this post. It disappears from the site and is deleted from the database, including photos and chats.";
+  }
+
   if (listing.kind === "wishlist") {
     return "If you bought what you were looking for, remove this wish. It disappears from the site and is deleted from the database, including photos and chats.";
   }

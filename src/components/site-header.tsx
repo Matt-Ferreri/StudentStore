@@ -6,6 +6,7 @@ import { createSessionClient } from "@/lib/supabase-server";
 
 const links = [
   { href: "/for-sale", label: "For sale" },
+  { href: "/housing", label: "Housing" },
   { href: "/wishlist", label: "Wishlist" },
   { href: "/messages", label: "Messages" },
   { href: "/listings/new", label: "Post" },

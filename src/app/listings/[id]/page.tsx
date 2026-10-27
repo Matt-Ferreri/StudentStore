@@ -53,6 +53,7 @@ async function ListingDetail({
 
   const listing = result.listing;
   const price = formatPrice(listing.priceCents);
+  const housing = listing.kind === "housing";
 
   return (
     <article className="space-y-6">
@@ -68,15 +69,17 @@ async function ListingDetail({
       <header className="space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-burgundy">
           {kindLabel(listing.kind)}
-          {listing.status === "sold" ? " · Sold" : ""}
+          {listing.kind === "for_sale" && listing.status === "sold" ? " · Sold" : ""}
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-ink">
           {listing.title}
         </h1>
         {price ? (
-          <p className="text-xl text-ink">{price}</p>
+          <p className="text-xl text-ink">
+            {housing ? `${price} a month` : price}
+          </p>
         ) : (
-          <p className="text-ink">Price not listed</p>
+          <p className="text-ink">{housing ? "Rent not listed" : "Price not listed"}</p>
         )}
       </header>
 
@@ -99,11 +102,31 @@ async function ListingDetail({
         </p>
       )}
 
-      <p className="whitespace-pre-wrap text-base leading-7 text-ink">
-        {listing.description}
-      </p>
+      {listing.description ? (
+        <p className="whitespace-pre-wrap text-base leading-7 text-ink">
+          {listing.description}
+        </p>
+      ) : null}
 
       <dl className="grid gap-4 rounded-2xl border border-sage bg-cream p-5 sm:grid-cols-2">
+        {housing ? (
+          <>
+            <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-burgundy">
+                People needed
+              </dt>
+              <dd className="mt-1 text-ink">
+                {listing.peopleNeeded ?? "Not listed"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-burgundy">
+                Address
+              </dt>
+              <dd className="mt-1 text-ink">{listing.address ?? "Not listed"}</dd>
+            </div>
+          </>
+        ) : null}
         <div>
           <dt className="text-xs font-medium uppercase tracking-wide text-burgundy">
             Posted by
