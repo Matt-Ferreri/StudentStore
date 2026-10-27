@@ -1,5 +1,10 @@
 import { housingTitle } from "@/lib/format";
-import type { FieldErrors, ListingKind } from "@/lib/types";
+import {
+  isProductCategory,
+  type FieldErrors,
+  type ListingKind,
+  type ProductCategory,
+} from "@/lib/types";
 
 export const MAX_PHOTOS = 4;
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -20,6 +25,7 @@ export type ValidListing = {
   title: string;
   description: string;
   priceCents: number | null;
+  category: ProductCategory;
   photos: File[];
 };
 
@@ -44,6 +50,7 @@ export function validateListing(formData: FormData): {
   const title = stringField(formData, "title");
   const description = stringField(formData, "description");
   const priceRaw = stringField(formData, "price");
+  const categoryRaw = stringField(formData, "category");
 
   if (!title) {
     fieldErrors.title = "Add a title.";
@@ -64,9 +71,17 @@ export function validateListing(formData: FormData): {
     fieldErrors.price = "Enter a price of $100,000 or less.";
   }
 
+  if (!isProductCategory(categoryRaw)) {
+    fieldErrors.category = "Choose a category.";
+  }
+
   const photos = readPhotos(formData, fieldErrors);
 
-  if (Object.keys(fieldErrors).length > 0 || priceCents === "invalid") {
+  if (
+    Object.keys(fieldErrors).length > 0 ||
+    priceCents === "invalid" ||
+    !isProductCategory(categoryRaw)
+  ) {
     return { fieldErrors, value: null };
   }
 
@@ -77,6 +92,7 @@ export function validateListing(formData: FormData): {
       title,
       description,
       priceCents,
+      category: categoryRaw,
       photos,
     },
   };

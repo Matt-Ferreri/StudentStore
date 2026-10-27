@@ -6,10 +6,12 @@ export const metadata = {
   title: "For sale",
 };
 
-export default function ForSalePage() {
+export default function ForSalePage({
+  searchParams,
+}: PageProps<"/for-sale">) {
   return (
     <Suspense fallback={<BoardFallback title="For sale" />}>
-      <ListingBoard />
+      <ListingBoard searchParams={searchParams} />
     </Suspense>
   );
 }

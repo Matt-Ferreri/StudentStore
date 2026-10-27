@@ -7,7 +7,13 @@ import { ListingClosure } from "@/components/listing-closure";
 import { ListingModeration } from "@/components/listing-moderation";
 import { SetupNotice } from "@/components/setup-notice";
 import { parseChatId } from "@/lib/chat";
-import { boardPath, formatPostedAt, formatPrice, kindLabel } from "@/lib/format";
+import {
+  boardPath,
+  categoryLabel,
+  formatPostedAt,
+  formatPrice,
+  kindLabel,
+} from "@/lib/format";
 import { getListing } from "@/lib/listings";
 
 export async function generateMetadata({
@@ -54,12 +60,16 @@ async function ListingDetail({
   const listing = result.listing;
   const price = formatPrice(listing.priceCents);
   const housing = listing.kind === "housing";
+  const backHref =
+    listing.kind === "for_sale" && listing.category
+      ? `/for-sale?category=${listing.category}`
+      : boardPath(listing.kind);
 
   return (
     <article className="space-y-6">
       <p>
         <Link
-          href={boardPath(listing.kind)}
+          href={backHref}
           className="text-sm font-medium text-burgundy underline"
         >
           Back to {kindLabel(listing.kind)}
@@ -71,6 +81,11 @@ async function ListingDetail({
           {kindLabel(listing.kind)}
           {listing.kind === "for_sale" && listing.status === "sold" ? " · Sold" : ""}
         </p>
+        {listing.category ? (
+          <p className="text-sm font-medium text-ink">
+            {categoryLabel(listing.category)}
+          </p>
+        ) : null}
         <h1 className="text-3xl font-semibold tracking-tight text-ink">
           {listing.title}
         </h1>

@@ -8,6 +8,28 @@ export const LISTING_STATUSES = ["open", "sold"] as const;
 
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
+export const PRODUCT_CATEGORIES = [
+  { slug: "textbooks", label: "Textbooks" },
+  { slug: "clothes", label: "Clothes" },
+  { slug: "school_supplies", label: "School supplies" },
+  { slug: "dorm", label: "Dorm" },
+  { slug: "athletic", label: "Athletic gear" },
+  { slug: "electronics", label: "Electronics" },
+  { slug: "furniture", label: "Furniture" },
+  { slug: "tickets", label: "Tickets" },
+  { slug: "transportation", label: "Bikes and rides" },
+  { slug: "kitchen", label: "Kitchen" },
+  { slug: "beauty", label: "Beauty" },
+  { slug: "entertainment", label: "Games and media" },
+  { slug: "other", label: "Other" },
+] as const;
+
+export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number]["slug"];
+
+export function isProductCategory(value: string): value is ProductCategory {
+  return PRODUCT_CATEGORIES.some((category) => category.slug === value);
+}
+
 export type ListingImage = {
   id: string;
   storagePath: string;
@@ -26,6 +48,7 @@ export type Listing = {
   peopleNeeded: number | null;
   address: string | null;
   priceCents: number | null;
+  category: ProductCategory | null;
   posterName: string;
   contact: string;
   createdAt: string;
@@ -75,6 +98,7 @@ export type FieldName =
   | "title"
   | "description"
   | "price"
+  | "category"
   | "photos"
   | "people"
   | "address"

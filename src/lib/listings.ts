@@ -1,9 +1,11 @@
 import { listingImageUrl, createReadClient } from "@/lib/supabase";
 import {
   CAMPUS_SLUG,
+  isProductCategory,
   type Listing,
   type ListingKind,
   type ListingStatus,
+  type ProductCategory,
 } from "@/lib/types";
 
 type ImageRow = {
@@ -23,6 +25,7 @@ type ListingRow = {
   people_needed: number | null;
   address: string | null;
   price_cents: number | null;
+  category: string | null;
   poster_name: string;
   contact: string;
   created_at: string;
@@ -40,6 +43,7 @@ const listingSelect = `
   people_needed,
   address,
   price_cents,
+  category,
   poster_name,
   contact,
   created_at,
@@ -48,6 +52,7 @@ const listingSelect = `
 
 export async function listListings(
   kind: ListingKind,
+  category?: ProductCategory,
 ): Promise<{ listings: Listing[] } | { configError: true }> {
   const supabase = createReadClient();
   if (!supabase) {
@@ -59,12 +64,17 @@ export async function listListings(
     return { configError: true };
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("listings")
     .select(listingSelect)
     .eq("campus_id", campusId)
-    .eq("kind", kind)
-    .order("created_at", { ascending: false });
+    .eq("kind", kind);
+
+  if (category) {
+    query = query.eq("category", category);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) {
     throw new Error(error.message);
@@ -147,6 +157,8 @@ function toListing(row: ListingRow): Listing {
     peopleNeeded: row.people_needed,
     address: row.address,
     priceCents: row.price_cents,
+    category:
+      row.category && isProductCategory(row.category) ? row.category : null,
     posterName: row.poster_name,
     contact: row.contact,
     createdAt: row.created_at,

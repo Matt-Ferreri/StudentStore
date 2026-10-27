@@ -1,4 +1,4 @@
-import type { ListingKind } from "@/lib/types";
+import { PRODUCT_CATEGORIES, type ListingKind, type ProductCategory } from "@/lib/types";
 
 export function formatPrice(cents: number | null): string | null {
   if (cents === null) {
@@ -28,6 +28,11 @@ export function kindLabel(kind: ListingKind): string {
   }
 
   return "Wishlist";
+}
+
+export function categoryLabel(category: ProductCategory): string {
+  const match = PRODUCT_CATEGORIES.find((item) => item.slug === category);
+  return match ? match.label : category;
 }
 
 export function boardPath(kind: ListingKind): string {

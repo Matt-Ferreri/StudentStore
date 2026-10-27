@@ -1,8 +1,13 @@
 import Link from "next/link";
 
-import { formatPrice, kindLabel } from "@/lib/format";
-import { listListings } from "@/lib/listings";
 import { SetupNotice } from "@/components/setup-notice";
+import { categoryLabel, formatPrice } from "@/lib/format";
+import { listListings } from "@/lib/listings";
+import {
+  isProductCategory,
+  PRODUCT_CATEGORIES,
+  type ProductCategory,
+} from "@/lib/types";
 
 const copy = {
   heading: "For sale",
@@ -10,8 +15,16 @@ const copy = {
   empty: "Nothing is for sale yet. Be the first to post.",
 };
 
-export async function ListingBoard() {
-  const result = await listListings("for_sale");
+export async function ListingBoard({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string | string[] }>;
+}) {
+  const { category: rawCategory } = await searchParams;
+  const requested = Array.isArray(rawCategory) ? rawCategory[0] : rawCategory;
+  const category: ProductCategory | null =
+    requested && isProductCategory(requested) ? requested : null;
+  const result = await listListings("for_sale", category ?? undefined);
   const text = copy;
 
   return (
@@ -31,11 +44,31 @@ export async function ListingBoard() {
         </Link>
       </div>
 
+      <nav aria-label="Categories" className="flex flex-wrap gap-2">
+        <Link
+          href="/for-sale"
+          aria-current={category === null ? "page" : undefined}
+          className={chipClass(category === null)}
+        >
+          All
+        </Link>
+        {PRODUCT_CATEGORIES.map((item) => (
+          <Link
+            key={item.slug}
+            href={`/for-sale?category=${item.slug}`}
+            aria-current={category === item.slug ? "page" : undefined}
+            className={chipClass(category === item.slug)}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+
       {"configError" in result ? (
         <SetupNotice />
       ) : result.listings.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-sage bg-cream px-5 py-10 text-center text-ink">
-          {text.empty}
+          {category ? "Nothing in this category yet." : text.empty}
         </p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
@@ -64,7 +97,9 @@ export async function ListingBoard() {
                   )}
                   <div className="flex flex-1 flex-col gap-2 p-4">
                     <p className="text-xs font-medium uppercase tracking-wide text-burgundy">
-                      {kindLabel(listing.kind)}
+                      {listing.category
+                        ? categoryLabel(listing.category)
+                        : "For sale"}
                       {listing.status === "sold" ? " · Sold" : ""}
                     </p>
                     <h2 className="text-lg font-semibold text-ink">
@@ -95,6 +130,12 @@ export async function ListingBoard() {
       </p>
     </section>
   );
+}
+
+function chipClass(active: boolean): string {
+  return active
+    ? "rounded-full bg-burgundy px-4 py-2 text-sm font-medium text-cream"
+    : "rounded-full border border-sage bg-cream px-4 py-2 text-sm font-medium text-ink hover:border-burgundy";
 }
 
 export function BoardFallback({ title }: { title: string }) {

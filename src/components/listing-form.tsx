@@ -3,7 +3,7 @@
 import { useActionState, type InputHTMLAttributes } from "react";
 
 import { createListing } from "@/app/actions";
-import type { CreateListingState } from "@/lib/types";
+import { PRODUCT_CATEGORIES, type CreateListingState } from "@/lib/types";
 import {
   MAX_DESCRIPTION_LENGTH,
   MAX_PHOTOS,
@@ -35,6 +35,26 @@ export function ListingForm() {
           className={inputClass}
         />
         <FieldError message={state.fieldErrors?.description} />
+      </label>
+
+      <label className="block space-y-1">
+        <span className="text-sm font-medium text-ink">Category</span>
+        <select
+          name="category"
+          required
+          defaultValue=""
+          className={inputClass}
+        >
+          <option value="" disabled>
+            Choose a category
+          </option>
+          {PRODUCT_CATEGORIES.map((category) => (
+            <option key={category.slug} value={category.slug}>
+              {category.label}
+            </option>
+          ))}
+        </select>
+        <FieldError message={state.fieldErrors?.category} />
       </label>
 
       <Field
