@@ -49,6 +49,7 @@ export type Listing = {
   address: string | null;
   priceCents: number | null;
   category: ProductCategory | null;
+  tradeItems: string[];
   posterName: string;
   contact: string;
   createdAt: string;
@@ -99,6 +100,7 @@ export type FieldName =
   | "description"
   | "price"
   | "category"
+  | "trades"
   | "photos"
   | "people"
   | "address"

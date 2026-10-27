@@ -12,8 +12,9 @@ export default function NewListingPage() {
           Post a listing
         </h1>
         <p className="mt-2 text-ink">
-          Title, description, and category are required. Price and photos can
-          be left blank. Your Marist email is the contact on the post.
+          Title, description, and category are required. Price, photos, and
+          trades can be left blank. Your Marist email is the contact on the
+          post.
         </p>
       </div>
       <div className="rounded-2xl border border-sage bg-cream p-5">

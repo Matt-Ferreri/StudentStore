@@ -96,6 +96,16 @@ async function ListingDetail({
         ) : (
           <p className="text-ink">{housing ? "Rent not listed" : "Price not listed"}</p>
         )}
+        {listing.tradeItems.length > 0 ? (
+          <div>
+            <p className="text-sm font-medium text-ink">Would trade for</p>
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-ink">
+              {listing.tradeItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </header>
 
       {listing.images.length > 0 ? (

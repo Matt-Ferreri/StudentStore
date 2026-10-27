@@ -11,6 +11,8 @@ export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const MAX_TITLE_LENGTH = 120;
 export const MAX_DESCRIPTION_LENGTH = 4000;
 export const MAX_PRICE_CENTS = 10_000_000;
+export const MAX_TRADES = 8;
+export const MAX_TRADE_LENGTH = 80;
 export const MAX_PEOPLE_NEEDED = 99;
 export const MAX_ADDRESS_LENGTH = 200;
 
@@ -26,6 +28,7 @@ export type ValidListing = {
   description: string;
   priceCents: number | null;
   category: ProductCategory;
+  tradeItems: string[];
   photos: File[];
 };
 
@@ -75,6 +78,7 @@ export function validateListing(formData: FormData): {
     fieldErrors.category = "Choose a category.";
   }
 
+  const tradeItems = readTrades(formData, fieldErrors);
   const photos = readPhotos(formData, fieldErrors);
 
   if (
@@ -93,6 +97,7 @@ export function validateListing(formData: FormData): {
       description,
       priceCents,
       category: categoryRaw,
+      tradeItems,
       photos,
     },
   };
@@ -169,6 +174,44 @@ export function validateHousing(formData: FormData): {
       photos,
     },
   };
+}
+
+function readTrades(formData: FormData, fieldErrors: FieldErrors): string[] {
+  if (formData.get("acceptTrades") !== "on") {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const trades: string[] = [];
+
+  for (const entry of formData.getAll("trade")) {
+    if (typeof entry !== "string") {
+      continue;
+    }
+
+    const label = entry.trim();
+    if (!label) {
+      continue;
+    }
+
+    const key = label.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    trades.push(label);
+  }
+
+  if (trades.length === 0) {
+    fieldErrors.trades = "Add at least one thing you would take in exchange.";
+  } else if (trades.length > MAX_TRADES) {
+    fieldErrors.trades = `You can list up to ${MAX_TRADES} things.`;
+  } else if (trades.some((label) => label.length > MAX_TRADE_LENGTH)) {
+    fieldErrors.trades = `Keep each item under ${MAX_TRADE_LENGTH} characters.`;
+  }
+
+  return trades;
 }
 
 function readPhotos(formData: FormData, fieldErrors: FieldErrors): File[] {

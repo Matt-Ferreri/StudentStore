@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, type InputHTMLAttributes } from "react";
+import { useActionState, useState, type InputHTMLAttributes } from "react";
 
 import { createListing } from "@/app/actions";
 import { PRODUCT_CATEGORIES, type CreateListingState } from "@/lib/types";
@@ -8,12 +8,16 @@ import {
   MAX_DESCRIPTION_LENGTH,
   MAX_PHOTOS,
   MAX_TITLE_LENGTH,
+  MAX_TRADES,
+  MAX_TRADE_LENGTH,
 } from "@/lib/validation";
 
 const initialState: CreateListingState = {};
 
 export function ListingForm() {
   const [state, action, pending] = useActionState(createListing, initialState);
+  const [acceptTrades, setAcceptTrades] = useState(false);
+  const [trades, setTrades] = useState([""]);
 
   return (
     <form action={action} className="space-y-5">
@@ -66,6 +70,69 @@ export function ListingForm() {
         hint="Optional. Use dollars, like 25 or 12.50."
         error={state.fieldErrors?.price}
       />
+
+      <div className="space-y-3">
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            name="acceptTrades"
+            checked={acceptTrades}
+            onChange={(event) => setAcceptTrades(event.target.checked)}
+            className="mt-1 size-4 accent-burgundy"
+          />
+          <span>
+            <span className="block text-sm font-medium text-ink">
+              I would take things in exchange
+            </span>
+            <span className="block text-xs text-ink">
+              Turn this on to list items you would accept instead of money.
+            </span>
+          </span>
+        </label>
+
+        {acceptTrades ? (
+          <div className="space-y-2 pl-7">
+            {trades.map((trade, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  name="trade"
+                  value={trade}
+                  maxLength={MAX_TRADE_LENGTH}
+                  placeholder="Mini fridge, textbooks, concert tickets"
+                  onChange={(event) => {
+                    const next = [...trades];
+                    next[index] = event.target.value;
+                    setTrades(next);
+                  }}
+                  className={inputClass}
+                  aria-label={`Trade item ${index + 1}`}
+                />
+                {trades.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTrades(trades.filter((_, itemIndex) => itemIndex !== index))
+                    }
+                    className="rounded-full px-3 py-2 text-sm font-medium text-burgundy hover:bg-sage hover:text-ink"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+            ))}
+            {trades.length < MAX_TRADES ? (
+              <button
+                type="button"
+                onClick={() => setTrades([...trades, ""])}
+                className="rounded-full border border-sage px-3 py-1.5 text-sm font-medium text-ink hover:border-burgundy"
+              >
+                Add another
+              </button>
+            ) : null}
+            <FieldError message={state.fieldErrors?.trades} />
+          </div>
+        ) : null}
+      </div>
 
       <label className="block space-y-1">
         <span className="text-sm font-medium text-ink">

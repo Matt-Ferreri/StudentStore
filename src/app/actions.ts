@@ -67,6 +67,23 @@ export async function createListing(
     return { error: "Could not save this listing. Try again." };
   }
 
+  if (value.tradeItems.length > 0) {
+    const { error: tradeError } = await supabase.from("listing_trades").insert(
+      value.tradeItems.map((label, index) => ({
+        listing_id: listing.id,
+        label,
+        sort_order: index,
+      })),
+    );
+
+    if (tradeError) {
+      await supabase.from("listings").delete().eq("id", listing.id);
+      return {
+        error: "Could not save the trade items, so the listing was not posted.",
+      };
+    }
+  }
+
   const photoError = await saveListingPhotos(supabase, listing.id, value.photos);
   if (photoError) {
     return { error: photoError };

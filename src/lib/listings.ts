@@ -14,6 +14,12 @@ type ImageRow = {
   sort_order: number;
 };
 
+type TradeRow = {
+  id: string;
+  label: string;
+  sort_order: number;
+};
+
 type ListingRow = {
   id: string;
   user_id: string;
@@ -26,6 +32,7 @@ type ListingRow = {
   address: string | null;
   price_cents: number | null;
   category: string | null;
+  listing_trades: TradeRow[] | null;
   poster_name: string;
   contact: string;
   created_at: string;
@@ -44,6 +51,7 @@ const listingSelect = `
   address,
   price_cents,
   category,
+  listing_trades (id, label, sort_order),
   poster_name,
   contact,
   created_at,
@@ -159,6 +167,9 @@ function toListing(row: ListingRow): Listing {
     priceCents: row.price_cents,
     category:
       row.category && isProductCategory(row.category) ? row.category : null,
+    tradeItems: [...(row.listing_trades ?? [])]
+      .sort((left, right) => left.sort_order - right.sort_order)
+      .map((trade) => trade.label),
     posterName: row.poster_name,
     contact: row.contact,
     createdAt: row.created_at,

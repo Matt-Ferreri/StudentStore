@@ -110,6 +110,11 @@ export async function ListingBoard({
                     ) : (
                       <p className="text-sm text-ink">Price not listed</p>
                     )}
+                    {listing.tradeItems.length > 0 ? (
+                      <p className="text-sm text-ink">
+                        Would trade for {listing.tradeItems.join(", ")}
+                      </p>
+                    ) : null}
                     <p className="mt-auto text-sm text-ink">
                       {listing.posterName}
                     </p>
