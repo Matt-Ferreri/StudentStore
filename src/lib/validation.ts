@@ -13,6 +13,10 @@ export const MAX_DESCRIPTION_LENGTH = 4000;
 export const MAX_PRICE_CENTS = 10_000_000;
 export const MAX_TRADES = 8;
 export const MAX_TRADE_LENGTH = 80;
+export const MAX_SECTIONS = 6;
+export const MAX_ITEMS_PER_SECTION = 12;
+export const MAX_SECTION_TITLE_LENGTH = 80;
+export const MAX_ITEM_LABEL_LENGTH = 80;
 export const MAX_PEOPLE_NEEDED = 99;
 export const MAX_ADDRESS_LENGTH = 200;
 
@@ -22,12 +26,23 @@ const PHOTO_TYPES = new Map<string, string>([
   ["image/webp", "webp"],
 ]);
 
+export type ValidListingItem = {
+  label: string;
+  priceCents: number | null;
+};
+
+export type ValidListingSection = {
+  title: string;
+  items: ValidListingItem[];
+};
+
 export type ValidListing = {
   kind: ListingKind;
   title: string;
   description: string;
   priceCents: number | null;
   category: ProductCategory;
+  sections: ValidListingSection[];
   tradeItems: string[];
   photos: File[];
 };
@@ -78,6 +93,7 @@ export function validateListing(formData: FormData): {
     fieldErrors.category = "Choose a category.";
   }
 
+  const sections = readSections(formData, fieldErrors);
   const tradeItems = readTrades(formData, fieldErrors);
   const photos = readPhotos(formData, fieldErrors);
 
@@ -97,6 +113,7 @@ export function validateListing(formData: FormData): {
       description,
       priceCents,
       category: categoryRaw,
+      sections,
       tradeItems,
       photos,
     },
@@ -174,6 +191,120 @@ export function validateHousing(formData: FormData): {
       photos,
     },
   };
+}
+
+function readSections(
+  formData: FormData,
+  fieldErrors: FieldErrors,
+): ValidListingSection[] {
+  const sections: ValidListingSection[] = [];
+
+  for (let index = 0; index < MAX_SECTIONS; index += 1) {
+    const present =
+      formData.has(`section-${index}-title`) ||
+      formData.getAll(`section-${index}-item`).length > 0;
+    if (!present) {
+      break;
+    }
+
+    const title = stringField(formData, `section-${index}-title`);
+    const labels = formData.getAll(`section-${index}-item`);
+    const prices = formData.getAll(`section-${index}-price`);
+    if (labels.length !== prices.length) {
+      setItemError(fieldErrors, "Each item needs a name and a price field.");
+      return [];
+    }
+
+    const items: ValidListingItem[] = [];
+    let rowError = false;
+
+    for (let itemIndex = 0; itemIndex < labels.length; itemIndex += 1) {
+      const labelEntry = labels[itemIndex];
+      const priceEntry = prices[itemIndex];
+      const label = typeof labelEntry === "string" ? labelEntry.trim() : "";
+      const priceRaw = typeof priceEntry === "string" ? priceEntry.trim() : "";
+      if (!label && !priceRaw) {
+        continue;
+      }
+
+      if (!label) {
+        setItemError(fieldErrors, "Name each item, or clear its price.");
+        rowError = true;
+        continue;
+      }
+
+      if (label.length > MAX_ITEM_LABEL_LENGTH) {
+        setItemError(
+          fieldErrors,
+          `Keep each item name under ${MAX_ITEM_LABEL_LENGTH} characters.`,
+        );
+        rowError = true;
+      }
+
+      const priceCents = parsePrice(priceRaw);
+      if (priceCents === "invalid") {
+        setItemError(
+          fieldErrors,
+          "Enter item prices like 25 or 12.50, or leave them blank.",
+        );
+        rowError = true;
+        continue;
+      }
+
+      if (priceCents !== null && priceCents > MAX_PRICE_CENTS) {
+        setItemError(fieldErrors, "Enter item prices of $100,000 or less.");
+        rowError = true;
+        continue;
+      }
+
+      items.push({ label, priceCents });
+    }
+
+    if (!title && items.length === 0 && !rowError) {
+      continue;
+    }
+
+    if (!title) {
+      setItemError(fieldErrors, "Name each section, like Dorm needs.");
+      rowError = true;
+    } else if (title.length > MAX_SECTION_TITLE_LENGTH) {
+      setItemError(
+        fieldErrors,
+        `Keep each section name under ${MAX_SECTION_TITLE_LENGTH} characters.`,
+      );
+      rowError = true;
+    }
+
+    if (items.length === 0) {
+      setItemError(fieldErrors, "Add at least one item in each section.");
+      rowError = true;
+    } else if (items.length > MAX_ITEMS_PER_SECTION) {
+      setItemError(
+        fieldErrors,
+        `You can list up to ${MAX_ITEMS_PER_SECTION} items in a section.`,
+      );
+      rowError = true;
+    }
+
+    if (!rowError) {
+      sections.push({ title, items });
+    }
+  }
+
+  if (
+    formData.has(`section-${MAX_SECTIONS}-title`) ||
+    formData.getAll(`section-${MAX_SECTIONS}-item`).length > 0
+  ) {
+    setItemError(fieldErrors, `You can add up to ${MAX_SECTIONS} sections.`);
+  }
+
+  return sections;
+}
+
+function setItemError(fieldErrors: FieldErrors, message: string) {
+  if (!fieldErrors.items) {
+    fieldErrors.items = message;
+  }
 }
 
 function readTrades(formData: FormData, fieldErrors: FieldErrors): string[] {

@@ -37,6 +37,18 @@ export type ListingImage = {
   url: string;
 };
 
+export type ListingItem = {
+  id: string;
+  label: string;
+  priceCents: number | null;
+};
+
+export type ListingSection = {
+  id: string;
+  title: string;
+  items: ListingItem[];
+};
+
 export type Listing = {
   id: string;
   userId: string;
@@ -49,6 +61,7 @@ export type Listing = {
   address: string | null;
   priceCents: number | null;
   category: ProductCategory | null;
+  sections: ListingSection[];
   tradeItems: string[];
   posterName: string;
   contact: string;
@@ -72,6 +85,7 @@ export type ListingConversation = {
   buyerName: string;
   buyerEmail: string;
   updatedAt: string;
+  unreadCount: number;
 };
 
 export type ListingChatView = {
@@ -89,6 +103,7 @@ export type InboxThread = {
   otherEmail: string;
   preview: string;
   updatedAt: string;
+  unreadCount: number;
 };
 
 export type SendMessageState = {
@@ -100,6 +115,7 @@ export type FieldName =
   | "description"
   | "price"
   | "category"
+  | "items"
   | "trades"
   | "photos"
   | "people"

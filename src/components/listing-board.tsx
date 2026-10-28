@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { SetupNotice } from "@/components/setup-notice";
-import { categoryLabel, formatPrice } from "@/lib/format";
+import { categoryLabel, listingPriceLabel } from "@/lib/format";
 import { listListings } from "@/lib/listings";
 import {
   isProductCategory,
@@ -40,7 +40,7 @@ export async function ListingBoard({
           href="/listings/new"
           className="rounded-full bg-burgundy px-4 py-2 text-sm font-medium text-cream hover:bg-ink"
         >
-          Post an item
+          Post a listing
         </Link>
       </div>
 
@@ -73,7 +73,7 @@ export async function ListingBoard({
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
           {result.listings.map((listing) => {
-            const price = formatPrice(listing.priceCents);
+            const price = listingPriceLabel(listing);
             const photo = listing.images[0];
 
             return (
@@ -110,6 +110,16 @@ export async function ListingBoard({
                     ) : (
                       <p className="text-sm text-ink">Price not listed</p>
                     )}
+                    {listing.sections.length > 0 ? (
+                      <ul className="space-y-1 text-sm text-ink">
+                        {listing.sections.map((section) => (
+                          <li key={section.id}>
+                            <span className="font-medium">{section.title}.</span>{" "}
+                            {section.items.map((item) => item.label).join(", ")}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                     {listing.tradeItems.length > 0 ? (
                       <p className="text-sm text-ink">
                         Would trade for {listing.tradeItems.join(", ")}

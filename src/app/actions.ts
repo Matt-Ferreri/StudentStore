@@ -6,7 +6,12 @@ import { displayNameFromEmail, normalizeMaristEmail } from "@/lib/marist-email";
 import { CAMPUS_SLUG, type CreateListingState } from "@/lib/types";
 import { LISTING_IMAGES_BUCKET } from "@/lib/supabase";
 import { createSessionClient } from "@/lib/supabase-server";
-import { extensionForPhoto, validateHousing, validateListing } from "@/lib/validation";
+import {
+  extensionForPhoto,
+  validateHousing,
+  validateListing,
+  type ValidListingSection,
+} from "@/lib/validation";
 import { notifyMatchingWishes } from "@/lib/wish-alerts";
 
 export async function createListing(
@@ -84,6 +89,18 @@ export async function createListing(
     }
   }
 
+  if (value.sections.length > 0) {
+    const sectionError = await saveListingSections(
+      supabase,
+      listing.id,
+      value.sections,
+    );
+    if (sectionError) {
+      await supabase.from("listings").delete().eq("id", listing.id);
+      return { error: sectionError };
+    }
+  }
+
   const photoError = await saveListingPhotos(supabase, listing.id, value.photos);
   if (photoError) {
     return { error: photoError };
@@ -93,7 +110,13 @@ export async function createListing(
     await notifyMatchingWishes({
       id: listing.id,
       title: value.title,
-      description: value.description,
+      description: [
+        value.description,
+        ...value.sections.flatMap((section) => [
+          section.title,
+          ...section.items.map((item) => item.label),
+        ]),
+      ].join("\n"),
       posterId: user.id,
     });
   }
@@ -166,6 +189,59 @@ export async function createHousing(
   }
 
   redirect(`/listings/${listing.id}`);
+}
+
+async function saveListingSections(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSessionClient>>>,
+  listingId: string,
+  sections: ValidListingSection[],
+): Promise<string | null> {
+  const { data: sectionRows, error: sectionError } = await supabase
+    .from("listing_sections")
+    .insert(
+      sections.map((section, index) => ({
+        listing_id: listingId,
+        title: section.title,
+        sort_order: index,
+      })),
+    )
+    .select("id, sort_order");
+
+  if (sectionError || !sectionRows) {
+    return "Could not save the sections, so the listing was not posted.";
+  }
+
+  const sectionIds = new Map(
+    sectionRows.map((row) => [row.sort_order as number, row.id as string]),
+  );
+  const items = sections.flatMap((section, sectionIndex) => {
+    const sectionId = sectionIds.get(sectionIndex);
+    if (!sectionId) {
+      return [];
+    }
+
+    return section.items.map((item, itemIndex) => ({
+      section_id: sectionId,
+      label: item.label,
+      price_cents: item.priceCents,
+      sort_order: itemIndex,
+    }));
+  });
+
+  const expected = sections.reduce(
+    (count, section) => count + section.items.length,
+    0,
+  );
+  if (items.length !== expected) {
+    return "Could not save the items, so the listing was not posted.";
+  }
+
+  const { error: itemError } = await supabase.from("listing_items").insert(items);
+  if (itemError) {
+    return "Could not save the items, so the listing was not posted.";
+  }
+
+  return null;
 }
 
 async function saveListingPhotos(

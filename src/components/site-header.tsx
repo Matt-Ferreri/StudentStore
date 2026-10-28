@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { signOut } from "@/app/auth-actions";
+import { UnreadCount } from "@/components/unread-count";
+import { loadUnreadTotal } from "@/lib/chat";
 import { displayNameFromEmail } from "@/lib/marist-email";
 import { createSessionClient } from "@/lib/supabase-server";
 
@@ -16,6 +18,7 @@ export async function SiteHeader() {
   const supabase = await createSessionClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   const name = user?.email ? displayNameFromEmail(user.email) : null;
+  const unreadTotal = user ? await loadUnreadTotal() : 0;
 
   return (
     <header className="border-b border-sage bg-burgundy text-cream">
@@ -33,9 +36,12 @@ export async function SiteHeader() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="rounded-full px-3 py-1.5 text-cream hover:bg-sage hover:text-ink"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-cream hover:bg-sage hover:text-ink"
                 >
                   {link.label}
+                  {link.href === "/messages" ? (
+                    <UnreadCount count={unreadTotal} tone="inverse" />
+                  ) : null}
                 </Link>
               ))}
             </nav>

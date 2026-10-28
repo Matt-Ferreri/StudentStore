@@ -6,7 +6,11 @@ import { createListing } from "@/app/actions";
 import { PRODUCT_CATEGORIES, type CreateListingState } from "@/lib/types";
 import {
   MAX_DESCRIPTION_LENGTH,
+  MAX_ITEM_LABEL_LENGTH,
+  MAX_ITEMS_PER_SECTION,
   MAX_PHOTOS,
+  MAX_SECTIONS,
+  MAX_SECTION_TITLE_LENGTH,
   MAX_TITLE_LENGTH,
   MAX_TRADES,
   MAX_TRADE_LENGTH,
@@ -14,10 +18,29 @@ import {
 
 const initialState: CreateListingState = {};
 
+type ItemDraft = {
+  label: string;
+  price: string;
+};
+
+type SectionDraft = {
+  title: string;
+  items: ItemDraft[];
+};
+
+function emptyItem(): ItemDraft {
+  return { label: "", price: "" };
+}
+
+function emptySection(): SectionDraft {
+  return { title: "", items: [emptyItem()] };
+}
+
 export function ListingForm() {
   const [state, action, pending] = useActionState(createListing, initialState);
   const [acceptTrades, setAcceptTrades] = useState(false);
   const [trades, setTrades] = useState([""]);
+  const [sections, setSections] = useState<SectionDraft[]>([emptySection()]);
 
   return (
     <form action={action} className="space-y-5">
@@ -67,9 +90,171 @@ export function ListingForm() {
         optional
         inputMode="decimal"
         placeholder="25.00"
-        hint="Optional. Use dollars, like 25 or 12.50."
+        hint="Optional price for the whole post. You can also price each item below."
         error={state.fieldErrors?.price}
       />
+
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm font-medium text-ink">
+            Items in this post{" "}
+            <span className="font-normal text-ink">(optional)</span>
+          </p>
+          <p className="text-xs text-ink">
+            Group what you are selling. A section could be Dorm needs, with a
+            TV, chairs, and a lamp. Leave this blank to post only the title
+            above.
+          </p>
+        </div>
+
+        {sections.map((section, sectionIndex) => (
+          <div
+            key={sectionIndex}
+            className="space-y-3 rounded-xl border border-sage p-3"
+          >
+            <div className="flex gap-2">
+              <input
+                name={`section-${sectionIndex}-title`}
+                value={section.title}
+                maxLength={MAX_SECTION_TITLE_LENGTH}
+                placeholder="Dorm needs"
+                onChange={(event) => {
+                  const title = event.target.value;
+                  setSections((current) =>
+                    current.map((entry, index) =>
+                      index === sectionIndex ? { ...entry, title } : entry,
+                    ),
+                  );
+                }}
+                className={inputClass}
+                aria-label={`Section ${sectionIndex + 1} name`}
+              />
+              {sections.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSections((current) =>
+                      current.filter((_, index) => index !== sectionIndex),
+                    )
+                  }
+                  className="rounded-full px-3 py-2 text-sm font-medium text-burgundy hover:bg-sage hover:text-ink"
+                >
+                  Remove
+                </button>
+              ) : null}
+            </div>
+
+            {section.items.map((item, itemIndex) => (
+              <div key={itemIndex} className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  name={`section-${sectionIndex}-item`}
+                  value={item.label}
+                  maxLength={MAX_ITEM_LABEL_LENGTH}
+                  placeholder="TV"
+                  onChange={(event) => {
+                    const label = event.target.value;
+                    setSections((current) =>
+                      current.map((entry, index) =>
+                        index === sectionIndex
+                          ? {
+                              ...entry,
+                              items: entry.items.map((entryItem, entryIndex) =>
+                                entryIndex === itemIndex
+                                  ? { ...entryItem, label }
+                                  : entryItem,
+                              ),
+                            }
+                          : entry,
+                      ),
+                    );
+                  }}
+                  className={inputClass}
+                  aria-label={`Section ${sectionIndex + 1} item ${itemIndex + 1}`}
+                />
+                <input
+                  name={`section-${sectionIndex}-price`}
+                  value={item.price}
+                  inputMode="decimal"
+                  maxLength={10}
+                  placeholder="25.00"
+                  onChange={(event) => {
+                    const price = event.target.value;
+                    setSections((current) =>
+                      current.map((entry, index) =>
+                        index === sectionIndex
+                          ? {
+                              ...entry,
+                              items: entry.items.map((entryItem, entryIndex) =>
+                                entryIndex === itemIndex
+                                  ? { ...entryItem, price }
+                                  : entryItem,
+                              ),
+                            }
+                          : entry,
+                      ),
+                    );
+                  }}
+                  className={`${inputClass} sm:max-w-28`}
+                  aria-label={`Section ${sectionIndex + 1} item ${itemIndex + 1} price`}
+                />
+                {section.items.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSections((current) =>
+                        current.map((entry, index) =>
+                          index === sectionIndex
+                            ? {
+                                ...entry,
+                                items: entry.items.filter(
+                                  (_, entryIndex) => entryIndex !== itemIndex,
+                                ),
+                              }
+                            : entry,
+                        ),
+                      )
+                    }
+                    className="rounded-full px-3 py-2 text-sm font-medium text-burgundy hover:bg-sage hover:text-ink"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+            ))}
+
+            {section.items.length < MAX_ITEMS_PER_SECTION ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setSections((current) =>
+                    current.map((entry, index) =>
+                      index === sectionIndex
+                        ? { ...entry, items: [...entry.items, emptyItem()] }
+                        : entry,
+                    ),
+                  )
+                }
+                className="rounded-full border border-sage px-3 py-1.5 text-sm font-medium text-ink hover:border-burgundy"
+              >
+                Add item
+              </button>
+            ) : null}
+          </div>
+        ))}
+
+        {sections.length < MAX_SECTIONS ? (
+          <button
+            type="button"
+            onClick={() =>
+              setSections((current) => [...current, emptySection()])
+            }
+            className="rounded-full border border-sage px-3 py-1.5 text-sm font-medium text-ink hover:border-burgundy"
+          >
+            Add section
+          </button>
+        ) : null}
+        <FieldError message={state.fieldErrors?.items} />
+      </div>
 
       <div className="space-y-3">
         <label className="flex items-start gap-3">

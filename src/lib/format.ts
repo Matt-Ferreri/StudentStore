@@ -1,4 +1,9 @@
-import { PRODUCT_CATEGORIES, type ListingKind, type ProductCategory } from "@/lib/types";
+import {
+  PRODUCT_CATEGORIES,
+  type ListingKind,
+  type ListingSection,
+  type ProductCategory,
+} from "@/lib/types";
 
 export function formatPrice(cents: number | null): string | null {
   if (cents === null) {
@@ -9,6 +14,44 @@ export function formatPrice(cents: number | null): string | null {
     style: "currency",
     currency: "USD",
   }).format(cents / 100);
+}
+
+export function formatPriceSpan(amounts: number[]): string | null {
+  if (amounts.length === 0) {
+    return null;
+  }
+
+  const low = Math.min(...amounts);
+  const high = Math.max(...amounts);
+  const lowLabel = formatPrice(low);
+  if (low === high) {
+    return lowLabel;
+  }
+
+  const highLabel = formatPrice(high);
+  if (!lowLabel || !highLabel) {
+    return lowLabel;
+  }
+
+  return `${lowLabel}–${highLabel}`;
+}
+
+export function listingPriceLabel(listing: {
+  priceCents: number | null;
+  sections: ListingSection[];
+}): string | null {
+  const overall = formatPrice(listing.priceCents);
+  if (overall) {
+    return overall;
+  }
+
+  return formatPriceSpan(
+    listing.sections.flatMap((section) =>
+      section.items.flatMap((item) =>
+        item.priceCents === null ? [] : [item.priceCents],
+      ),
+    ),
+  );
 }
 
 export function formatPostedAt(iso: string): string {

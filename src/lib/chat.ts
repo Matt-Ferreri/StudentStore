@@ -55,6 +55,41 @@ export function isUuid(value: string): boolean {
   return UUID_PATTERN.test(value);
 }
 
+type UnreadCountRow = {
+  conversation_id: string;
+  unread_count: number;
+};
+
+export async function loadUnreadCounts(): Promise<Map<string, number>> {
+  const supabase = await createSessionClient();
+  if (!supabase) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase.rpc("unread_message_counts");
+  if (error || !data) {
+    return new Map();
+  }
+
+  const counts = new Map<string, number>();
+  for (const row of data as UnreadCountRow[]) {
+    const count = Number(row.unread_count);
+    if (Number.isFinite(count) && count > 0) {
+      counts.set(row.conversation_id, count);
+    }
+  }
+  return counts;
+}
+
+export async function loadUnreadTotal(): Promise<number> {
+  const counts = await loadUnreadCounts();
+  let total = 0;
+  for (const count of counts.values()) {
+    total += count;
+  }
+  return total;
+}
+
 export async function loadListingChat(
   listing: Pick<Listing, "id" | "userId">,
   viewerId: string,
@@ -81,6 +116,7 @@ export async function loadListingChat(
     return { unavailable: true };
   }
 
+  const unreadCounts = await loadUnreadCounts();
   const conversations: ListingConversation[] = (
     (data ?? []) as Pick<
       ConversationRow,
@@ -91,6 +127,7 @@ export async function loadListingChat(
     buyerName: row.buyer_name,
     buyerEmail: row.buyer_email,
     updatedAt: row.updated_at,
+    unreadCount: unreadCounts.get(row.id) ?? 0,
   }));
 
   const active =
@@ -164,6 +201,7 @@ export async function loadInbox(
     return { unavailable: true };
   }
 
+  const unreadCounts = await loadUnreadCounts();
   const threads: InboxThread[] = [];
   for (const row of (data ?? []) as ConversationRow[]) {
     const listing = Array.isArray(row.listings) ? row.listings[0] : row.listings;
@@ -180,6 +218,7 @@ export async function loadInbox(
       otherEmail: viewerIsBuyer ? listing.contact : row.buyer_email,
       preview: row.last_message?.trim() || "No messages yet",
       updatedAt: row.updated_at,
+      unreadCount: unreadCounts.get(row.id) ?? 0,
     });
   }
 

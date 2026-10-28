@@ -13,6 +13,7 @@ import {
   formatPostedAt,
   formatPrice,
   kindLabel,
+  listingPriceLabel,
 } from "@/lib/format";
 import { getListing } from "@/lib/listings";
 
@@ -58,8 +59,12 @@ async function ListingDetail({
   }
 
   const listing = result.listing;
-  const price = formatPrice(listing.priceCents);
   const housing = listing.kind === "housing";
+  const price = housing
+    ? formatPrice(listing.priceCents)
+    : listingPriceLabel(listing);
+  const wholePostPrice =
+    !housing && listing.priceCents !== null && listing.sections.length > 0;
   const backHref =
     listing.kind === "for_sale" && listing.category
       ? `/for-sale?category=${listing.category}`
@@ -92,6 +97,9 @@ async function ListingDetail({
         {price ? (
           <p className="text-xl text-ink">
             {housing ? `${price} a month` : price}
+            {wholePostPrice ? (
+              <span className="ml-2 text-base">for the whole post</span>
+            ) : null}
           </p>
         ) : (
           <p className="text-ink">{housing ? "Rent not listed" : "Price not listed"}</p>
@@ -131,6 +139,33 @@ async function ListingDetail({
         <p className="whitespace-pre-wrap text-base leading-7 text-ink">
           {listing.description}
         </p>
+      ) : null}
+
+      {listing.sections.length > 0 ? (
+        <div className="space-y-4">
+          {listing.sections.map((section) => (
+            <section
+              key={section.id}
+              className="rounded-2xl border border-sage bg-cream p-5"
+            >
+              <h2 className="text-lg font-semibold text-ink">{section.title}</h2>
+              <ul className="mt-3 divide-y divide-sage">
+                {section.items.map((item) => {
+                  const itemPrice = formatPrice(item.priceCents);
+                  return (
+                    <li
+                      key={item.id}
+                      className="flex items-baseline justify-between gap-4 py-2 text-ink"
+                    >
+                      <span>{item.label}</span>
+                      {itemPrice ? <span>{itemPrice}</span> : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
       ) : null}
 
       <dl className="grid gap-4 rounded-2xl border border-sage bg-cream p-5 sm:grid-cols-2">

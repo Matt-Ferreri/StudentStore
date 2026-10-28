@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ChatPanel } from "@/components/chat-panel";
+import { UnreadCount } from "@/components/unread-count";
 import { loadListingChat } from "@/lib/chat";
 import { createSessionClient } from "@/lib/supabase-server";
 import type { Listing } from "@/lib/types";
@@ -68,11 +69,15 @@ export async function ListingChat({
                       aria-current={selected ? "true" : undefined}
                       className={
                         selected
-                          ? "inline-block rounded-full bg-burgundy px-3 py-1.5 text-sm font-medium text-cream"
-                          : "inline-block rounded-full bg-sage px-3 py-1.5 text-sm font-medium text-ink hover:bg-burgundy hover:text-cream"
+                          ? "inline-flex items-center gap-1.5 rounded-full bg-burgundy px-3 py-1.5 text-sm font-medium text-cream"
+                          : "inline-flex items-center gap-1.5 rounded-full bg-sage px-3 py-1.5 text-sm font-medium text-ink hover:bg-burgundy hover:text-cream"
                       }
                     >
                       {conversation.buyerName}
+                      <UnreadCount
+                        count={conversation.unreadCount}
+                        tone={selected ? "inverse" : "solid"}
+                      />
                     </Link>
                   </li>
                 );

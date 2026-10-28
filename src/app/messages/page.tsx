@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { SetupNotice } from "@/components/setup-notice";
+import { UnreadCount } from "@/components/unread-count";
 import { loadInbox } from "@/lib/chat";
 import { formatPostedAt } from "@/lib/format";
 import { createSessionClient } from "@/lib/supabase-server";
@@ -58,17 +59,20 @@ async function Inbox() {
             <li key={thread.id}>
               <Link
                 href={`/listings/${thread.listingId}?chat=${thread.id}`}
-                className="block rounded-2xl border border-sage bg-cream p-4 hover:border-burgundy"
+                className="flex items-start justify-between gap-3 rounded-2xl border border-sage bg-cream p-4 hover:border-burgundy"
               >
-                <p className="text-xs font-medium uppercase tracking-wide text-burgundy">
-                  {thread.listingTitle}
-                </p>
-                <p className="mt-1 font-semibold text-ink">{thread.otherName}</p>
-                <p className="text-sm text-ink">{thread.otherEmail}</p>
-                <p className="mt-2 line-clamp-2 text-sm text-ink">{thread.preview}</p>
-                <p className="mt-2 text-xs text-ink">
-                  {formatPostedAt(thread.updatedAt)}
-                </p>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-burgundy">
+                    {thread.listingTitle}
+                  </p>
+                  <p className="mt-1 font-semibold text-ink">{thread.otherName}</p>
+                  <p className="text-sm text-ink">{thread.otherEmail}</p>
+                  <p className="mt-2 line-clamp-2 text-sm text-ink">{thread.preview}</p>
+                  <p className="mt-2 text-xs text-ink">
+                    {formatPostedAt(thread.updatedAt)}
+                  </p>
+                </div>
+                <UnreadCount count={thread.unreadCount} />
               </Link>
             </li>
           ))}

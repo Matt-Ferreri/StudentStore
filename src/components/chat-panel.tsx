@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-import { sendMessage } from "@/app/chat-actions";
+import { markConversationRead, sendMessage } from "@/app/chat-actions";
 import { formatPostedAt } from "@/lib/format";
 import { MAX_MESSAGE_LENGTH, type ChatMessage, type SendMessageState } from "@/lib/types";
 
@@ -30,6 +30,13 @@ export function ChatPanel({
     }
     list.scrollTop = list.scrollHeight;
   }, [lastMessageId]);
+
+  useEffect(() => {
+    if (!conversationId) {
+      return;
+    }
+    void markConversationRead(conversationId);
+  }, [conversationId, lastMessageId]);
 
   useEffect(() => {
     const id = window.setInterval(() => {

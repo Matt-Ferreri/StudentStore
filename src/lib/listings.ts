@@ -20,6 +20,20 @@ type TradeRow = {
   sort_order: number;
 };
 
+type ItemRow = {
+  id: string;
+  label: string;
+  price_cents: number | null;
+  sort_order: number;
+};
+
+type SectionRow = {
+  id: string;
+  title: string;
+  sort_order: number;
+  listing_items: ItemRow[] | ItemRow | null;
+};
+
 type ListingRow = {
   id: string;
   user_id: string;
@@ -32,6 +46,7 @@ type ListingRow = {
   address: string | null;
   price_cents: number | null;
   category: string | null;
+  listing_sections: SectionRow[] | SectionRow | null;
   listing_trades: TradeRow[] | null;
   poster_name: string;
   contact: string;
@@ -51,6 +66,12 @@ const listingSelect = `
   address,
   price_cents,
   category,
+  listing_sections (
+    id,
+    title,
+    sort_order,
+    listing_items (id, label, price_cents, sort_order)
+  ),
   listing_trades (id, label, sort_order),
   poster_name,
   contact,
@@ -149,6 +170,14 @@ export function viewerCanRemoveListing(
   );
 }
 
+function rowsOf<T>(value: T[] | T | null | undefined): T[] {
+  if (!value) {
+    return [];
+  }
+
+  return Array.isArray(value) ? value : [value];
+}
+
 function toListing(row: ListingRow): Listing {
   const images = [...(row.listing_images ?? [])].sort(
     (left, right) => left.sort_order - right.sort_order,
@@ -167,6 +196,19 @@ function toListing(row: ListingRow): Listing {
     priceCents: row.price_cents,
     category:
       row.category && isProductCategory(row.category) ? row.category : null,
+    sections: rowsOf(row.listing_sections)
+      .sort((left, right) => left.sort_order - right.sort_order)
+      .map((section) => ({
+        id: section.id,
+        title: section.title,
+        items: rowsOf(section.listing_items)
+          .sort((left, right) => left.sort_order - right.sort_order)
+          .map((item) => ({
+            id: item.id,
+            label: item.label,
+            priceCents: item.price_cents,
+          })),
+      })),
     tradeItems: [...(row.listing_trades ?? [])]
       .sort((left, right) => left.sort_order - right.sort_order)
       .map((trade) => trade.label),

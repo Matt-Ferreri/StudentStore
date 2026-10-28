@@ -128,7 +128,36 @@ export async function sendMessage(
 
   revalidatePath(`/listings/${listingId}`);
   revalidatePath("/messages");
+  revalidatePath("/", "layout");
   return {};
+}
+
+export async function markConversationRead(conversationId: string): Promise<void> {
+  if (!isUuid(conversationId)) {
+    return;
+  }
+
+  const supabase = await createSessionClient();
+  if (!supabase) {
+    return;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return;
+  }
+
+  const { error } = await supabase.rpc("mark_conversation_read", {
+    target_id: conversationId,
+  });
+  if (error) {
+    return;
+  }
+
+  revalidatePath("/messages");
+  revalidatePath("/", "layout");
 }
 
 function stringField(formData: FormData, name: string): string {
