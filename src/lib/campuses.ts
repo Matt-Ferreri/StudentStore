@@ -43,7 +43,8 @@ export async function listCampuses(): Promise<
     .order("name", { ascending: true });
 
   if (error) {
-    throw new Error(error.message);
+    console.error("Could not load colleges", error.message);
+    return { configError: true };
   }
 
   return { campuses: ((data ?? []) as CampusRow[]).map(toCampus) };
@@ -66,7 +67,8 @@ export async function getCampus(
     .maybeSingle();
 
   if (error) {
-    throw new Error(error.message);
+    console.error("Could not load college", error.message);
+    return { configError: true };
   }
 
   if (!data) {
