@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { isCampusSlug } from "@/lib/campuses";
 import { signInEmail } from "@/lib/admins";
 import { normalizeMaristEmail } from "@/lib/marist-email";
 import { syncAdminEmails } from "@/lib/sync-admin-emails";
@@ -66,7 +67,7 @@ export async function login(
       };
     }
 
-    redirect("/");
+    redirect(campusHome(stringField(formData, "campus")));
   }
 
   const { error } = await supabase.auth.signInWithOtp({
@@ -84,12 +85,17 @@ export async function login(
   return { email, codeSent: true };
 }
 
-export async function signOut() {
+export async function signOut(formData: FormData) {
   const supabase = await createSessionClient();
   if (supabase) {
     await supabase.auth.signOut();
   }
-  redirect("/login");
+  const campus = stringField(formData, "campus");
+  redirect(isCampusSlug(campus) ? `/${campus}/login` : "/");
+}
+
+function campusHome(slug: string): string {
+  return isCampusSlug(slug) ? `/${slug}` : "/";
 }
 
 function stringField(formData: FormData, name: string): string {

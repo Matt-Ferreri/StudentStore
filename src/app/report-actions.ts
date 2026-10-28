@@ -1,8 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
-
 import { adminEmails } from "@/lib/admins";
+import { absoluteUrl, slugFromCampusJoin } from "@/lib/campuses";
 import { isUuid } from "@/lib/chat";
 import { sendMail } from "@/lib/mail";
 import { createServiceClient, createSessionClient } from "@/lib/supabase-server";
@@ -36,7 +35,7 @@ export async function reportListing(
 
   const { data, error } = await supabase
     .from("listings")
-    .select("id, user_id, title, poster_name, contact")
+    .select("id, user_id, title, poster_name, contact, campuses (slug)")
     .eq("id", listingId)
     .maybeSingle();
 
@@ -50,6 +49,7 @@ export async function reportListing(
     title: string;
     poster_name: string;
     contact: string;
+    campuses: { slug: string } | { slug: string }[] | null;
   };
 
   if (listing.user_id === user.id) {
@@ -79,7 +79,8 @@ export async function reportListing(
     return { error: "This report could not be sent right now. Try again later." };
   }
 
-  const url = await listingUrl(listingId);
+  const campusSlug = slugFromCampusJoin(listing.campuses) ?? "marist";
+  const url = await absoluteUrl(`/${campusSlug}/listings/${listingId}`);
   const subjectTitle = listing.title.replace(/\s+/g, " ").slice(0, 80);
   const text = reportEmail({
     title: listing.title,
@@ -144,22 +145,6 @@ function reportEmail(input: {
     "",
     `View the listing: ${input.url}`,
   ].join("\n");
-}
-
-async function listingUrl(id: string): Promise<string> {
-  const headerList = await headers();
-  const origin = headerList.get("origin");
-  if (origin) {
-    return `${origin.replace(/\/$/, "")}/listings/${id}`;
-  }
-
-  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
-  if (!host) {
-    return `/listings/${id}`;
-  }
-
-  const proto = headerList.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}/listings/${id}`;
 }
 
 function stringField(formData: FormData, name: string): string {

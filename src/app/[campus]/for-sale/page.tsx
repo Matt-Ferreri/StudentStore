@@ -2,16 +2,19 @@ import { Suspense } from "react";
 
 import { BoardFallback, ListingBoard } from "@/components/listing-board";
 
+export const instant = false;
+
 export const metadata = {
   title: "For sale",
 };
 
 export default function ForSalePage({
+  params,
   searchParams,
-}: PageProps<"/for-sale">) {
+}: PageProps<"/[campus]/for-sale">) {
   return (
     <Suspense fallback={<BoardFallback title="For sale" />}>
-      <ListingBoard searchParams={searchParams} />
+      <ListingBoard params={params} searchParams={searchParams} />
     </Suspense>
   );
 }

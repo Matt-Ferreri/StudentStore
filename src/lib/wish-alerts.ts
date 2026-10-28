@@ -1,5 +1,4 @@
-import { headers } from "next/headers";
-
+import { absoluteUrl } from "@/lib/campuses";
 import { sendMail } from "@/lib/mail";
 import { createServiceClient } from "@/lib/supabase-server";
 import { wishMatchesListing } from "@/lib/wish-match";
@@ -12,6 +11,7 @@ type WishRow = {
 
 export async function notifyMatchingWishes(listing: {
   id: string;
+  campusSlug: string;
   title: string;
   description: string;
   posterId: string;
@@ -60,7 +60,7 @@ export async function notifyMatchingWishes(listing: {
       return;
     }
 
-    const url = await listingUrl(listing.id);
+    const url = await absoluteUrl(`/${listing.campusSlug}/listings/${listing.id}`);
     const subjectTitle = listing.title.replace(/\s+/g, " ").slice(0, 80);
 
     await Promise.all(
@@ -94,20 +94,4 @@ function emailBody(title: string, phrases: string[], url: string): string {
     "",
     `View the listing: ${url}`,
   ].join("\n");
-}
-
-async function listingUrl(id: string): Promise<string> {
-  const headerList = await headers();
-  const origin = headerList.get("origin");
-  if (origin) {
-    return `${origin.replace(/\/$/, "")}/listings/${id}`;
-  }
-
-  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
-  if (!host) {
-    return `/listings/${id}`;
-  }
-
-  const proto = headerList.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}/listings/${id}`;
 }

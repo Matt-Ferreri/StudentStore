@@ -13,11 +13,12 @@ import {
 
 const initialState: CreateListingState = {};
 
-export function HousingForm() {
+export function HousingForm({ campusSlug }: { campusSlug: string }) {
   const [state, action, pending] = useActionState(createHousing, initialState);
 
   return (
     <form action={action} className="space-y-5">
+      <input type="hidden" name="campus" value={campusSlug} />
       <Field
         label="People needed"
         name="people"

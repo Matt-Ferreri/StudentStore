@@ -36,7 +36,7 @@ function emptySection(): SectionDraft {
   return { title: "", items: [emptyItem()] };
 }
 
-export function ListingForm() {
+export function ListingForm({ campusSlug }: { campusSlug: string }) {
   const [state, action, pending] = useActionState(createListing, initialState);
   const [acceptTrades, setAcceptTrades] = useState(false);
   const [trades, setTrades] = useState([""]);
@@ -44,6 +44,7 @@ export function ListingForm() {
 
   return (
     <form action={action} className="space-y-5">
+      <input type="hidden" name="campus" value={campusSlug} />
       <Field
         label="Title"
         name="title"

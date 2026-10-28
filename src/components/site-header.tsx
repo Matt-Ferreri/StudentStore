@@ -2,19 +2,20 @@ import Link from "next/link";
 
 import { signOut } from "@/app/auth-actions";
 import { UnreadCount } from "@/components/unread-count";
+import type { Campus } from "@/lib/campuses";
 import { loadUnreadTotal } from "@/lib/chat";
+import { campusPath } from "@/lib/format";
 import { displayNameFromEmail } from "@/lib/marist-email";
 import { createSessionClient } from "@/lib/supabase-server";
 
-const links = [
-  { href: "/for-sale", label: "For sale" },
-  { href: "/housing", label: "Housing" },
-  { href: "/wishlist", label: "Wishlist" },
-  { href: "/messages", label: "Messages" },
-  { href: "/listings/new", label: "Post" },
-];
-
-export async function SiteHeader() {
+export async function SiteHeader({ campus }: { campus: Campus }) {
+  const links = [
+    { href: campusPath(campus.slug, "/for-sale"), label: "For sale" },
+    { href: campusPath(campus.slug, "/housing"), label: "Housing" },
+    { href: campusPath(campus.slug, "/wishlist"), label: "Wishlist" },
+    { href: campusPath(campus.slug, "/messages"), label: "Messages" },
+    { href: campusPath(campus.slug, "/listings/new"), label: "Post" },
+  ];
   const supabase = await createSessionClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
   const name = user?.email ? displayNameFromEmail(user.email) : null;
@@ -23,11 +24,11 @@ export async function SiteHeader() {
   return (
     <header className="border-b border-sage bg-burgundy text-cream">
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-        <Link href="/" className="group">
+        <Link href={campusPath(campus.slug, "/")} className="group">
           <span className="block text-lg font-semibold tracking-tight">
-            StudentStore
+            {campus.brandName}
           </span>
-          <span className="block text-sm text-cream">Marist University</span>
+          <span className="block text-sm text-cream">{campus.name}</span>
         </Link>
         <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
           {name ? (
@@ -39,7 +40,7 @@ export async function SiteHeader() {
                   className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-cream hover:bg-sage hover:text-ink"
                 >
                   {link.label}
-                  {link.href === "/messages" ? (
+                  {link.label === "Messages" ? (
                     <UnreadCount count={unreadTotal} tone="inverse" />
                   ) : null}
                 </Link>
@@ -50,6 +51,7 @@ export async function SiteHeader() {
             <div className="flex items-center gap-2">
               <span className="px-2 text-cream">{name}</span>
               <form action={signOut}>
+                <input type="hidden" name="campus" value={campus.slug} />
                 <button
                   type="submit"
                   className="rounded-full px-3 py-1.5 text-cream hover:bg-sage hover:text-ink"
@@ -60,16 +62,6 @@ export async function SiteHeader() {
             </div>
           ) : null}
         </div>
-      </div>
-    </header>
-  );
-}
-
-export function HeaderFallback() {
-  return (
-    <header className="border-b border-sage bg-burgundy text-cream">
-      <div className="mx-auto flex w-full max-w-5xl px-4 py-4">
-        <span className="text-lg font-semibold tracking-tight">StudentStore</span>
       </div>
     </header>
   );

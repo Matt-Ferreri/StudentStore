@@ -2,8 +2,9 @@
 
 import { redirect } from "next/navigation";
 
+import { findCampusId } from "@/lib/campuses";
 import { displayNameFromEmail, normalizeMaristEmail } from "@/lib/marist-email";
-import { CAMPUS_SLUG, type CreateListingState } from "@/lib/types";
+import type { CreateListingState } from "@/lib/types";
 import { LISTING_IMAGES_BUCKET } from "@/lib/supabase";
 import { createSessionClient } from "@/lib/supabase-server";
 import {
@@ -39,19 +40,12 @@ export async function createListing(
     return { error: "Sign in with a Marist email before posting." };
   }
 
-  const { data: campus, error: campusError } = await supabase
-    .from("campuses")
-    .select("id")
-    .eq("slug", CAMPUS_SLUG)
-    .maybeSingle();
-
-  if (campusError || !campus) {
-    return {
-      error:
-        "Marist is not in the database yet. Run the SQL migration from the README, then try again.",
-    };
+  const campus = await campusForPost(supabase, formData);
+  if ("error" in campus) {
+    return { error: campus.error };
   }
 
+  const campusSlug = campus.slug;
   const { data: listing, error: insertError } = await supabase
     .from("listings")
     .insert({
@@ -109,6 +103,7 @@ export async function createListing(
   if (value.kind === "for_sale") {
     await notifyMatchingWishes({
       id: listing.id,
+      campusSlug,
       title: value.title,
       description: [
         value.description,
@@ -121,7 +116,7 @@ export async function createListing(
     });
   }
 
-  redirect(`/listings/${listing.id}`);
+  redirect(`/${campusSlug}/listings/${listing.id}`);
 }
 
 export async function createHousing(
@@ -149,17 +144,9 @@ export async function createHousing(
     return { error: "Sign in with a Marist email before posting." };
   }
 
-  const { data: campus, error: campusError } = await supabase
-    .from("campuses")
-    .select("id")
-    .eq("slug", CAMPUS_SLUG)
-    .maybeSingle();
-
-  if (campusError || !campus) {
-    return {
-      error:
-        "Marist is not in the database yet. Run the SQL migration from the README, then try again.",
-    };
+  const campus = await campusForPost(supabase, formData);
+  if ("error" in campus) {
+    return { error: campus.error };
   }
 
   const { data: listing, error: insertError } = await supabase
@@ -188,7 +175,28 @@ export async function createHousing(
     return { error: photoError };
   }
 
-  redirect(`/listings/${listing.id}`);
+  redirect(`/${campus.slug}/listings/${listing.id}`);
+}
+
+async function campusForPost(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSessionClient>>>,
+  formData: FormData,
+): Promise<{ slug: string; id: string } | { error: string }> {
+  const slug = stringField(formData, "campus");
+  const id = await findCampusId(supabase, slug);
+  if (!id) {
+    return {
+      error:
+        "That college is not in the database yet. Run the SQL migration from the README, then try again.",
+    };
+  }
+
+  return { slug, id };
+}
+
+function stringField(formData: FormData, name: string): string {
+  const value = formData.get(name);
+  return typeof value === "string" ? value.trim() : "";
 }
 
 async function saveListingSections(

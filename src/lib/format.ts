@@ -78,16 +78,25 @@ export function categoryLabel(category: ProductCategory): string {
   return match ? match.label : category;
 }
 
-export function boardPath(kind: ListingKind): string {
+export function campusPath(slug: string, path = ""): string {
+  if (!path || path === "/") {
+    return `/${slug}`;
+  }
+
+  const suffix = path.startsWith("/") ? path : `/${path}`;
+  return `/${slug}${suffix}`;
+}
+
+export function boardPath(slug: string, kind: ListingKind): string {
   if (kind === "for_sale") {
-    return "/for-sale";
+    return campusPath(slug, "/for-sale");
   }
 
   if (kind === "housing") {
-    return "/housing";
+    return campusPath(slug, "/housing");
   }
 
-  return "/wishlist";
+  return campusPath(slug, "/wishlist");
 }
 
 export function housingTitle(input: {

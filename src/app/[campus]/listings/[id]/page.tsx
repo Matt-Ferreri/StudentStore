@@ -9,6 +9,7 @@ import { SetupNotice } from "@/components/setup-notice";
 import { parseChatId } from "@/lib/chat";
 import {
   boardPath,
+  campusPath,
   categoryLabel,
   formatPostedAt,
   formatPrice,
@@ -17,13 +18,13 @@ import {
 } from "@/lib/format";
 import { getListing } from "@/lib/listings";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const result = await getListing(id);
+export const instant = false;
+
+type ListingPageProps = PageProps<"/[campus]/listings/[id]">;
+
+export async function generateMetadata({ params }: Pick<ListingPageProps, "params">) {
+  const { campus, id } = await params;
+  const result = await getListing(id, campus);
   if ("configError" in result || !result.listing) {
     return { title: "Listing" };
   }
@@ -31,10 +32,7 @@ export async function generateMetadata({
   return { title: result.listing.title };
 }
 
-export default function ListingPage({
-  params,
-  searchParams,
-}: PageProps<"/listings/[id]">) {
+export default function ListingPage({ params, searchParams }: ListingPageProps) {
   return (
     <Suspense fallback={<p className="text-ink">Loading listing…</p>}>
       <ListingDetail params={params} searchParams={searchParams} />
@@ -42,13 +40,10 @@ export default function ListingPage({
   );
 }
 
-async function ListingDetail({
-  params,
-  searchParams,
-}: Pick<PageProps<"/listings/[id]">, "params" | "searchParams">) {
-  const { id } = await params;
+async function ListingDetail({ params, searchParams }: ListingPageProps) {
+  const { campus, id } = await params;
   const { chat } = await searchParams;
-  const result = await getListing(id);
+  const result = await getListing(id, campus);
 
   if ("configError" in result) {
     return <SetupNotice />;
@@ -67,8 +62,8 @@ async function ListingDetail({
     !housing && listing.priceCents !== null && listing.sections.length > 0;
   const backHref =
     listing.kind === "for_sale" && listing.category
-      ? `/for-sale?category=${listing.category}`
-      : boardPath(listing.kind);
+      ? `${campusPath(campus, "/for-sale")}?category=${listing.category}`
+      : boardPath(campus, listing.kind);
 
   return (
     <article className="space-y-6">
@@ -218,7 +213,7 @@ async function ListingDetail({
 
       <ListingClosure listing={listing} />
 
-      <ListingChat listing={listing} chatId={parseChatId(chat)} />
+      <ListingChat listing={listing} chatId={parseChatId(chat)} campus={campus} />
     </article>
   );
 }

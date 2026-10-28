@@ -6,13 +6,22 @@ import { login, type LoginState } from "@/app/auth-actions";
 
 const initialState: LoginState = {};
 
-export function LoginForm() {
+export function LoginForm({
+  campusSlug,
+  emailLabel,
+  placeholder,
+}: {
+  campusSlug: string;
+  emailLabel: string;
+  placeholder: string;
+}) {
   const [state, action, pending] = useActionState(login, initialState);
 
   return (
     <form action={action} className="space-y-5">
+      <input type="hidden" name="campus" value={campusSlug} />
       <label className="block space-y-1">
-        <span className="text-sm font-medium text-ink">Marist email</span>
+        <span className="text-sm font-medium text-ink">{emailLabel}</span>
         <input
           name="email"
           type="email"
@@ -20,7 +29,7 @@ export function LoginForm() {
           autoComplete="email"
           defaultValue={state.email}
           readOnly={state.codeSent}
-          placeholder="first.last@marist.edu"
+          placeholder={placeholder}
           className="w-full rounded-xl border border-sage bg-cream px-3 py-2 text-sm text-ink outline-none placeholder:text-sage focus:border-burgundy read-only:text-ink"
         />
       </label>
@@ -68,7 +77,10 @@ export function LoginForm() {
 
       {state.codeSent ? (
         <p>
-          <a href="/login" className="text-sm font-medium text-burgundy underline">
+          <a
+            href={`/${campusSlug}/login`}
+            className="text-sm font-medium text-burgundy underline"
+          >
             Use a different email
           </a>
         </p>

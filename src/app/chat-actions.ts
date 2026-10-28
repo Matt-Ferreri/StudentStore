@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { campusSlugForListing, LEGACY_CAMPUS_SLUG, slugFromCampusJoin } from "@/lib/campuses";
 import { isUuid } from "@/lib/chat";
 import { displayNameFromEmail, normalizeMaristEmail } from "@/lib/marist-email";
 import { createSessionClient } from "@/lib/supabase-server";
@@ -44,7 +45,7 @@ export async function sendMessage(
 
   const { data: listing, error: listingError } = await supabase
     .from("listings")
-    .select("id, user_id")
+    .select("id, user_id, campuses (slug)")
     .eq("id", listingId)
     .maybeSingle();
 
@@ -126,8 +127,12 @@ export async function sendMessage(
     return { error: "Could not send that message. Try again." };
   }
 
-  revalidatePath(`/listings/${listingId}`);
-  revalidatePath("/messages");
+  const slug =
+    slugFromCampusJoin(
+      (listing as { campuses: { slug: string } | { slug: string }[] | null }).campuses,
+    ) ?? LEGACY_CAMPUS_SLUG;
+  revalidatePath(`/${slug}/listings/${listingId}`);
+  revalidatePath(`/${slug}/messages`);
   revalidatePath("/", "layout");
   return {};
 }
@@ -156,7 +161,23 @@ export async function markConversationRead(conversationId: string): Promise<void
     return;
   }
 
-  revalidatePath("/messages");
+  const { data: conversation } = await supabase
+    .from("conversations")
+    .select("listing_id")
+    .eq("id", conversationId)
+    .maybeSingle();
+  const listingId =
+    conversation && typeof conversation.listing_id === "string"
+      ? conversation.listing_id
+      : null;
+  const slug = listingId
+    ? ((await campusSlugForListing(supabase, listingId)) ?? LEGACY_CAMPUS_SLUG)
+    : LEGACY_CAMPUS_SLUG;
+
+  revalidatePath(`/${slug}/messages`);
+  if (listingId) {
+    revalidatePath(`/${slug}/listings/${listingId}`);
+  }
   revalidatePath("/", "layout");
 }
 

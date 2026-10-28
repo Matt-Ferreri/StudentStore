@@ -1,5 +1,3 @@
-export const CAMPUS_SLUG = "marist";
-
 export const LISTING_KINDS = ["for_sale", "wishlist", "housing"] as const;
 
 export type ListingKind = (typeof LISTING_KINDS)[number];

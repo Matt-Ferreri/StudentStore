@@ -4,22 +4,27 @@ import { Suspense } from "react";
 import { SetupNotice } from "@/components/setup-notice";
 import { UnreadCount } from "@/components/unread-count";
 import { loadInbox } from "@/lib/chat";
-import { formatPostedAt } from "@/lib/format";
+import { campusPath, formatPostedAt } from "@/lib/format";
 import { createSessionClient } from "@/lib/supabase-server";
+
+export const instant = false;
 
 export const metadata = {
   title: "Messages",
 };
 
-export default function MessagesPage() {
+export default function MessagesPage({
+  params,
+}: PageProps<"/[campus]/messages">) {
   return (
     <Suspense fallback={<p className="text-ink">Loading messages…</p>}>
-      <Inbox />
+      <Inbox params={params} />
     </Suspense>
   );
 }
 
-async function Inbox() {
+async function Inbox({ params }: { params: Promise<{ campus: string }> }) {
+  const { campus } = await params;
   const supabase = await createSessionClient();
   if (!supabase) {
     return <SetupNotice />;
@@ -58,7 +63,7 @@ async function Inbox() {
           {result.threads.map((thread) => (
             <li key={thread.id}>
               <Link
-                href={`/listings/${thread.listingId}?chat=${thread.id}`}
+                href={`${campusPath(campus, `/listings/${thread.listingId}`)}?chat=${thread.id}`}
                 className="flex items-start justify-between gap-3 rounded-2xl border border-sage bg-cream p-4 hover:border-burgundy"
               >
                 <div className="min-w-0">

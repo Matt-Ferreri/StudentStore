@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { isAdminEmail } from "@/lib/admins";
+import {
+  campusSlugForListing,
+  LEGACY_CAMPUS_SLUG,
+  slugFromCampusJoin,
+} from "@/lib/campuses";
 import { isUuid } from "@/lib/chat";
 import { boardPath } from "@/lib/format";
 import { viewerCanRemoveListing } from "@/lib/listings";
@@ -44,8 +49,10 @@ export async function markListingSold(
     };
   }
 
-  revalidatePath(`/listings/${listingId}`);
-  revalidatePath("/for-sale");
+  const slug =
+    (await campusSlugForListing(supabase, listingId)) ?? LEGACY_CAMPUS_SLUG;
+  revalidatePath(`/${slug}/listings/${listingId}`);
+  revalidatePath(boardPath(slug, "for_sale"));
   return {};
 }
 
@@ -72,7 +79,9 @@ export async function removeListing(
 
   const { data, error } = await supabase
     .from("listings")
-    .select("id, user_id, kind, status, sold_to_id, listing_images (storage_path)")
+    .select(
+      "id, user_id, kind, status, sold_to_id, listing_images (storage_path), campuses (slug)",
+    )
     .eq("id", listingId)
     .maybeSingle();
 
@@ -87,6 +96,7 @@ export async function removeListing(
     status: ListingStatus;
     sold_to_id: string | null;
     listing_images: { storage_path: string }[] | { storage_path: string } | null;
+    campuses: { slug: string } | { slug: string }[] | null;
   };
 
   if (
@@ -129,10 +139,11 @@ export async function removeListing(
     return { error: "Could not remove this listing. Try again." };
   }
 
-  revalidatePath(`/listings/${listingId}`);
-  revalidatePath(boardPath(listing.kind));
-  revalidatePath("/messages");
-  redirect(boardPath(listing.kind));
+  const slug = slugFromCampusJoin(listing.campuses) ?? LEGACY_CAMPUS_SLUG;
+  revalidatePath(`/${slug}/listings/${listingId}`);
+  revalidatePath(boardPath(slug, listing.kind));
+  revalidatePath(`/${slug}/messages`);
+  redirect(boardPath(slug, listing.kind));
 }
 
 export async function takeDownListing(
@@ -163,7 +174,7 @@ export async function takeDownListing(
 
   const { data, error } = await service
     .from("listings")
-    .select("id, kind, listing_images (storage_path)")
+    .select("id, kind, listing_images (storage_path), campuses (slug)")
     .eq("id", listingId)
     .maybeSingle();
 
@@ -175,6 +186,7 @@ export async function takeDownListing(
     id: string;
     kind: ListingKind;
     listing_images: { storage_path: string }[] | { storage_path: string } | null;
+    campuses: { slug: string } | { slug: string }[] | null;
   };
   const images = Array.isArray(listing.listing_images)
     ? listing.listing_images
@@ -202,10 +214,11 @@ export async function takeDownListing(
     return { error: "Could not take down this listing. Try again." };
   }
 
-  revalidatePath(`/listings/${listingId}`);
-  revalidatePath(boardPath(listing.kind));
-  revalidatePath("/messages");
-  redirect(boardPath(listing.kind));
+  const slug = slugFromCampusJoin(listing.campuses) ?? LEGACY_CAMPUS_SLUG;
+  revalidatePath(`/${slug}/listings/${listingId}`);
+  revalidatePath(boardPath(slug, listing.kind));
+  revalidatePath(`/${slug}/messages`);
+  redirect(boardPath(slug, listing.kind));
 }
 
 function stringField(formData: FormData, name: string): string {

@@ -3,15 +3,18 @@ import Link from "next/link";
 import { ChatPanel } from "@/components/chat-panel";
 import { UnreadCount } from "@/components/unread-count";
 import { loadListingChat } from "@/lib/chat";
+import { campusPath } from "@/lib/format";
 import { createSessionClient } from "@/lib/supabase-server";
 import type { Listing } from "@/lib/types";
 
 export async function ListingChat({
   listing,
   chatId,
+  campus,
 }: {
   listing: Listing;
   chatId: string | null;
+  campus: string;
 }) {
   const supabase = await createSessionClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
@@ -47,7 +50,10 @@ export async function ListingChat({
               : `Message ${listing.posterName} about this listing, or email ${listing.contact}.`}
           </p>
         </div>
-        <Link href="/messages" className="text-sm font-medium text-burgundy underline">
+        <Link
+          href={campusPath(campus, "/messages")}
+          className="text-sm font-medium text-burgundy underline"
+        >
           All messages
         </Link>
       </div>
@@ -65,7 +71,7 @@ export async function ListingChat({
                 return (
                   <li key={conversation.id}>
                     <Link
-                      href={`/listings/${listing.id}?chat=${conversation.id}`}
+                      href={`${campusPath(campus, `/listings/${listing.id}`)}?chat=${conversation.id}`}
                       aria-current={selected ? "true" : undefined}
                       className={
                         selected

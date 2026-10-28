@@ -10,7 +10,7 @@ const initialState: WishFormState = {};
 const inputClass =
   "w-full rounded-xl border border-sage bg-cream px-3 py-2 text-sm text-ink outline-none placeholder:text-sage focus:border-burgundy";
 
-export function WishForm() {
+export function WishForm({ campusSlug }: { campusSlug: string }) {
   const [state, action, pending] = useActionState(addWish, initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const wasPending = useRef(false);
@@ -24,6 +24,7 @@ export function WishForm() {
 
   return (
     <form ref={formRef} action={action} className="space-y-4">
+      <input type="hidden" name="campus" value={campusSlug} />
       <label className="block space-y-1">
         <span className="text-sm font-medium text-ink">What you are looking for</span>
         <input

@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import { SetupNotice } from "@/components/setup-notice";
-import { categoryLabel, listingPriceLabel } from "@/lib/format";
+import { getCampus } from "@/lib/campuses";
+import { campusPath, categoryLabel, listingPriceLabel } from "@/lib/format";
 import { listListings } from "@/lib/listings";
 import {
   isProductCategory,
@@ -9,35 +10,40 @@ import {
   type ProductCategory,
 } from "@/lib/types";
 
-const copy = {
-  heading: "For sale",
-  lede: "Textbooks, furniture, tickets, and anything else Marist students are selling.",
-  empty: "Nothing is for sale yet. Be the first to post.",
-};
-
 export async function ListingBoard({
+  params,
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string | string[] }>;
+  params: Promise<{ campus: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const { campus } = await params;
   const { category: rawCategory } = await searchParams;
   const requested = Array.isArray(rawCategory) ? rawCategory[0] : rawCategory;
   const category: ProductCategory | null =
     requested && isProductCategory(requested) ? requested : null;
-  const result = await listListings("for_sale", category ?? undefined);
-  const text = copy;
+  const result = await listListings(campus, "for_sale", category ?? undefined);
+  const campusResult = await getCampus(campus);
+  const campusName =
+    "campus" in campusResult && campusResult.campus
+      ? campusResult.campus.name
+      : "this campus";
+  const forSalePath = campusPath(campus, "/for-sale");
 
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
           <h1 className="text-3xl font-semibold tracking-tight text-ink">
-            {text.heading}
+            For sale
           </h1>
-          <p className="mt-2 text-ink">{text.lede}</p>
+          <p className="mt-2 text-ink">
+            Textbooks, furniture, tickets, and anything else students at{" "}
+            {campusName} are selling.
+          </p>
         </div>
         <Link
-          href="/listings/new"
+          href={campusPath(campus, "/listings/new")}
           className="rounded-full bg-burgundy px-4 py-2 text-sm font-medium text-cream hover:bg-ink"
         >
           Post a listing
@@ -46,7 +52,7 @@ export async function ListingBoard({
 
       <nav aria-label="Categories" className="flex flex-wrap gap-2">
         <Link
-          href="/for-sale"
+          href={forSalePath}
           aria-current={category === null ? "page" : undefined}
           className={chipClass(category === null)}
         >
@@ -55,7 +61,7 @@ export async function ListingBoard({
         {PRODUCT_CATEGORIES.map((item) => (
           <Link
             key={item.slug}
-            href={`/for-sale?category=${item.slug}`}
+            href={`${forSalePath}?category=${item.slug}`}
             aria-current={category === item.slug ? "page" : undefined}
             className={chipClass(category === item.slug)}
           >
@@ -68,7 +74,7 @@ export async function ListingBoard({
         <SetupNotice />
       ) : result.listings.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-sage bg-cream px-5 py-10 text-center text-ink">
-          {category ? "Nothing in this category yet." : text.empty}
+          {category ? "Nothing in this category yet." : "Nothing is for sale yet. Be the first to post."}
         </p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
@@ -79,7 +85,7 @@ export async function ListingBoard({
             return (
               <li key={listing.id}>
                 <Link
-                  href={`/listings/${listing.id}`}
+                  href={campusPath(campus, `/listings/${listing.id}`)}
                   className="flex h-full flex-col overflow-hidden rounded-2xl border border-sage bg-cream hover:border-burgundy"
                 >
                   {photo ? (
@@ -138,7 +144,7 @@ export async function ListingBoard({
 
       <p className="text-sm text-ink">
         Looking for something that is not here yet? Add it on your{" "}
-        <Link href="/wishlist" className="font-medium text-burgundy underline">
+        <Link href={campusPath(campus, "/wishlist")} className="font-medium text-burgundy underline">
           wishlist
         </Link>{" "}
         and we will email you when a similar listing is posted.

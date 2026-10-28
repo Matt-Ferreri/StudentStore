@@ -4,11 +4,17 @@ import { SetupNotice } from "@/components/setup-notice";
 import { formatPostedAt } from "@/lib/format";
 import { listMyWishes, type WishItem } from "@/lib/wishes";
 
-export function WishlistPanel({ wishes }: { wishes: WishItem[] }) {
+export function WishlistPanel({
+  wishes,
+  campusSlug,
+}: {
+  wishes: WishItem[];
+  campusSlug: string;
+}) {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
       <div className="rounded-2xl border border-sage bg-cream p-5">
-        <WishForm />
+        <WishForm campusSlug={campusSlug} />
       </div>
 
       {wishes.length === 0 ? (
@@ -37,6 +43,7 @@ export function WishlistPanel({ wishes }: { wishes: WishItem[] }) {
                 </div>
                 <form action={removeWish}>
                   <input type="hidden" name="id" value={wish.id} />
+                  <input type="hidden" name="campus" value={campusSlug} />
                   <button
                     type="submit"
                     className="rounded-full px-3 py-1.5 text-sm font-medium text-burgundy hover:bg-sage hover:text-ink"
@@ -53,11 +60,16 @@ export function WishlistPanel({ wishes }: { wishes: WishItem[] }) {
   );
 }
 
-export async function Wishlist() {
+export async function Wishlist({
+  params,
+}: {
+  params: Promise<{ campus: string }>;
+}) {
+  const { campus } = await params;
   const result = await listMyWishes();
   if ("configError" in result) {
     return <SetupNotice />;
   }
 
-  return <WishlistPanel wishes={result.wishes} />;
+  return <WishlistPanel wishes={result.wishes} campusSlug={campus} />;
 }

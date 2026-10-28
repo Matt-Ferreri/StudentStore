@@ -2,11 +2,16 @@ import Link from "next/link";
 
 import { BoardFallback } from "@/components/listing-board";
 import { SetupNotice } from "@/components/setup-notice";
-import { formatPrice } from "@/lib/format";
+import { campusPath, formatPrice } from "@/lib/format";
 import { listListings } from "@/lib/listings";
 
-export async function HousingBoard() {
-  const result = await listListings("housing");
+export async function HousingBoard({
+  params,
+}: {
+  params: Promise<{ campus: string }>;
+}) {
+  const { campus } = await params;
+  const result = await listListings(campus, "housing");
 
   return (
     <section className="space-y-6">
@@ -22,7 +27,7 @@ export async function HousingBoard() {
           </p>
         </div>
         <Link
-          href="/housing/new"
+          href={campusPath(campus, "/housing/new")}
           className="rounded-full bg-burgundy px-4 py-2 text-sm font-medium text-cream hover:bg-ink"
         >
           Post a lease
@@ -44,7 +49,7 @@ export async function HousingBoard() {
             return (
               <li key={listing.id}>
                 <Link
-                  href={`/listings/${listing.id}`}
+                  href={campusPath(campus, `/listings/${listing.id}`)}
                   className="flex h-full flex-col overflow-hidden rounded-2xl border border-sage bg-cream hover:border-burgundy"
                 >
                   {photo ? (

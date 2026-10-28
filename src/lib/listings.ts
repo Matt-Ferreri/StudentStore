@@ -1,6 +1,5 @@
 import { listingImageUrl, createReadClient } from "@/lib/supabase";
 import {
-  CAMPUS_SLUG,
   isProductCategory,
   type Listing,
   type ListingKind,
@@ -80,6 +79,7 @@ const listingSelect = `
 `;
 
 export async function listListings(
+  campusSlug: string,
   kind: ListingKind,
   category?: ProductCategory,
 ): Promise<{ listings: Listing[] } | { configError: true }> {
@@ -88,7 +88,7 @@ export async function listListings(
     return { configError: true };
   }
 
-  const campusId = await maristCampusId(supabase);
+  const campusId = await campusIdBySlug(supabase, campusSlug);
   if (!campusId) {
     return { configError: true };
   }
@@ -116,16 +116,23 @@ export async function listListings(
 
 export async function getListing(
   id: string,
+  campusSlug: string,
 ): Promise<{ listing: Listing | null } | { configError: true }> {
   const supabase = createReadClient();
   if (!supabase) {
     return { configError: true };
   }
 
+  const campusId = await campusIdBySlug(supabase, campusSlug);
+  if (!campusId) {
+    return { listing: null };
+  }
+
   const { data, error } = await supabase
     .from("listings")
     .select(listingSelect)
     .eq("id", id)
+    .eq("campus_id", campusId)
     .maybeSingle();
 
   if (error) {
@@ -139,13 +146,14 @@ export async function getListing(
   return { listing: toListing(data as ListingRow) };
 }
 
-async function maristCampusId(
+async function campusIdBySlug(
   supabase: NonNullable<ReturnType<typeof createReadClient>>,
+  slug: string,
 ): Promise<string | null> {
   const { data, error } = await supabase
     .from("campuses")
     .select("id")
-    .eq("slug", CAMPUS_SLUG)
+    .eq("slug", slug)
     .maybeSingle();
 
   if (error || !data) {

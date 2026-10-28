@@ -2,11 +2,15 @@ import { Suspense } from "react";
 
 import { Wishlist } from "@/components/wishlist-panel";
 
+export const instant = false;
+
 export const metadata = {
   title: "Wishlist",
 };
 
-export default function WishlistPage() {
+export default function WishlistPage({
+  params,
+}: PageProps<"/[campus]/wishlist">) {
   return (
     <section className="space-y-6">
       <div className="max-w-2xl">
@@ -19,7 +23,7 @@ export default function WishlistPage() {
         </p>
       </div>
       <Suspense fallback={<p className="text-ink">Loading your wishlist…</p>}>
-        <Wishlist />
+        <Wishlist params={params} />
       </Suspense>
     </section>
   );
