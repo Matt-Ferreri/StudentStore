@@ -16,6 +16,21 @@ export function formatPrice(cents: number | null): string | null {
   }).format(cents / 100);
 }
 
+/** Dollars string for form inputs, e.g. 1250 → "12.50". */
+export function formatPriceInput(cents: number | null): string {
+  if (cents === null) {
+    return "";
+  }
+
+  const dollars = Math.floor(cents / 100);
+  const fraction = cents % 100;
+  if (fraction === 0) {
+    return String(dollars);
+  }
+
+  return `${dollars}.${String(fraction).padStart(2, "0")}`;
+}
+
 export function formatPriceSpan(amounts: number[]): string | null {
   if (amounts.length === 0) {
     return null;

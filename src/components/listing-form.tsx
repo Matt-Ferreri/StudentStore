@@ -2,8 +2,13 @@
 
 import { useActionState, useState, type InputHTMLAttributes } from "react";
 
-import { createListing } from "@/app/actions";
-import { PRODUCT_CATEGORIES, type CreateListingState } from "@/lib/types";
+import { createListing, updateListing } from "@/app/actions";
+import { formatPriceInput } from "@/lib/format";
+import {
+  PRODUCT_CATEGORIES,
+  type CreateListingState,
+  type Listing,
+} from "@/lib/types";
 import {
   MAX_DESCRIPTION_LENGTH,
   MAX_ITEM_LABEL_LENGTH,
@@ -36,20 +41,57 @@ function emptySection(): SectionDraft {
   return { title: "", items: [emptyItem()] };
 }
 
-export function ListingForm({ campusSlug }: { campusSlug: string }) {
-  const [state, action, pending] = useActionState(createListing, initialState);
-  const [acceptTrades, setAcceptTrades] = useState(false);
-  const [trades, setTrades] = useState([""]);
-  const [sections, setSections] = useState<SectionDraft[]>([emptySection()]);
+function sectionsFromListing(listing: Listing): SectionDraft[] {
+  if (listing.sections.length === 0) {
+    return [emptySection()];
+  }
+
+  return listing.sections.map((section) => ({
+    title: section.title,
+    items:
+      section.items.length > 0
+        ? section.items.map((item) => ({
+            label: item.label,
+            price: formatPriceInput(item.priceCents),
+          }))
+        : [emptyItem()],
+  }));
+}
+
+export function ListingForm({
+  campusSlug,
+  listing,
+}: {
+  campusSlug: string;
+  listing?: Listing;
+}) {
+  const editing = Boolean(listing);
+  const [state, action, pending] = useActionState(
+    editing ? updateListing : createListing,
+    initialState,
+  );
+  const [acceptTrades, setAcceptTrades] = useState(
+    () => (listing?.tradeItems.length ?? 0) > 0,
+  );
+  const [trades, setTrades] = useState(() =>
+    listing && listing.tradeItems.length > 0 ? [...listing.tradeItems] : [""],
+  );
+  const [sections, setSections] = useState<SectionDraft[]>(() =>
+    listing ? sectionsFromListing(listing) : [emptySection()],
+  );
 
   return (
     <form action={action} className="space-y-5">
       <input type="hidden" name="campus" value={campusSlug} />
+      {listing ? (
+        <input type="hidden" name="listingId" value={listing.id} />
+      ) : null}
       <Field
         label="Title"
         name="title"
         required
         maxLength={MAX_TITLE_LENGTH}
+        defaultValue={listing?.title}
         error={state.fieldErrors?.title}
       />
 
@@ -60,6 +102,7 @@ export function ListingForm({ campusSlug }: { campusSlug: string }) {
           required
           rows={5}
           maxLength={MAX_DESCRIPTION_LENGTH}
+          defaultValue={listing?.description}
           className={inputClass}
         />
         <FieldError message={state.fieldErrors?.description} />
@@ -80,6 +123,7 @@ export function ListingForm({ campusSlug }: { campusSlug: string }) {
                 type="checkbox"
                 name="category"
                 value={category.slug}
+                defaultChecked={listing?.categories.includes(category.slug)}
                 className="size-4 accent-burgundy"
               />
               {category.label}
@@ -95,6 +139,7 @@ export function ListingForm({ campusSlug }: { campusSlug: string }) {
         optional
         inputMode="decimal"
         placeholder="25.00"
+        defaultValue={listing ? formatPriceInput(listing.priceCents) : undefined}
         hint="Optional price for the whole post. You can also price each item below."
         error={state.fieldErrors?.price}
       />
@@ -324,22 +369,62 @@ export function ListingForm({ campusSlug }: { campusSlug: string }) {
         ) : null}
       </div>
 
-      <label className="block space-y-1">
-        <span className="text-sm font-medium text-ink">
-          Photos <span className="font-normal text-ink">(optional)</span>
-        </span>
-        <input
-          type="file"
-          name="photos"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          className="block w-full text-sm text-ink file:mr-3 file:rounded-full file:border-0 file:bg-sage file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink"
-        />
-        <p className="text-xs text-ink">
-          Up to {MAX_PHOTOS} photos. JPEG, PNG, or WebP. 5 MB each.
-        </p>
-        <FieldError message={state.fieldErrors?.photos} />
-      </label>
+      <div className="space-y-3">
+        {listing && listing.images.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-ink">Current photos</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {listing.images.map((image, index) => (
+                // User uploads are served from Supabase storage, not the Next image optimizer.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={image.id}
+                  src={image.url}
+                  alt={`Current photo ${index + 1}`}
+                  className="aspect-square w-full rounded-xl border border-sage object-cover"
+                />
+              ))}
+            </div>
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                name="clearPhotos"
+                className="mt-1 size-4 accent-burgundy"
+              />
+              <span className="text-sm text-ink">
+                Remove current photos
+                <span className="block text-xs text-ink">
+                  Check this to clear them, or upload new ones below to replace
+                  them.
+                </span>
+              </span>
+            </label>
+          </div>
+        ) : null}
+
+        <label className="block space-y-1">
+          <span className="text-sm font-medium text-ink">
+            {listing && listing.images.length > 0
+              ? "Replace photos"
+              : "Photos"}{" "}
+            <span className="font-normal text-ink">(optional)</span>
+          </span>
+          <input
+            type="file"
+            name="photos"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="block w-full text-sm text-ink file:mr-3 file:rounded-full file:border-0 file:bg-sage file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink"
+          />
+          <p className="text-xs text-ink">
+            Up to {MAX_PHOTOS} photos. JPEG, PNG, or WebP. 5 MB each.
+            {listing && listing.images.length > 0
+              ? " Leave blank to keep the current photos."
+              : ""}
+          </p>
+          <FieldError message={state.fieldErrors?.photos} />
+        </label>
+      </div>
 
       {state.error ? (
         <p className="rounded-xl border border-burgundy bg-cream px-3 py-2 text-sm text-burgundy" role="alert">
@@ -352,7 +437,13 @@ export function ListingForm({ campusSlug }: { campusSlug: string }) {
         disabled={pending}
         className="rounded-full bg-burgundy px-5 py-2.5 text-sm font-medium text-cream hover:bg-ink disabled:opacity-60"
       >
-        {pending ? "Posting…" : "Post listing"}
+        {pending
+          ? editing
+            ? "Saving…"
+            : "Posting…"
+          : editing
+            ? "Save changes"
+            : "Post listing"}
       </button>
     </form>
   );

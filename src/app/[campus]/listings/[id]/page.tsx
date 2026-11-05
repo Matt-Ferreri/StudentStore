@@ -16,7 +16,8 @@ import {
   kindLabel,
   listingPriceLabel,
 } from "@/lib/format";
-import { getListing } from "@/lib/listings";
+import { getListing, viewerCanEditListing } from "@/lib/listings";
+import { createSessionClient } from "@/lib/supabase-server";
 
 export const instant = false;
 
@@ -64,17 +65,33 @@ async function ListingDetail({ params, searchParams }: ListingPageProps) {
     listing.kind === "for_sale" && listing.categories.length === 1
       ? `${campusPath(campus, "/for-sale")}?category=${listing.categories[0]}`
       : boardPath(campus, listing.kind);
+  const supabase = await createSessionClient();
+  const viewer = supabase ? (await supabase.auth.getUser()).data.user : null;
+  const canEdit =
+    viewer != null && viewerCanEditListing(listing, viewer.id);
 
   return (
     <article className="space-y-6">
-      <p>
-        <Link
-          href={backHref}
-          className="text-sm font-medium text-burgundy underline"
-        >
-          Back to {kindLabel(listing.kind)}
-        </Link>
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p>
+          <Link
+            href={backHref}
+            className="text-sm font-medium text-burgundy underline"
+          >
+            Back to {kindLabel(listing.kind)}
+          </Link>
+        </p>
+        {canEdit ? (
+          <p>
+            <Link
+              href={campusPath(campus, `/listings/${listing.id}/edit`)}
+              className="rounded-full border border-sage px-3 py-1.5 text-sm font-medium text-ink hover:border-burgundy"
+            >
+              Edit {housing ? "lease" : "listing"}
+            </Link>
+          </p>
+        ) : null}
+      </div>
 
       <header className="space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-burgundy">

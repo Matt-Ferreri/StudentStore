@@ -120,7 +120,10 @@ export function validateListing(formData: FormData): {
   };
 }
 
-export function validateHousing(formData: FormData): {
+export function validateHousing(
+  formData: FormData,
+  options: { existingPhotoCount?: number } = {},
+): {
   fieldErrors: FieldErrors;
   formError?: string;
   value: ValidHousing | null;
@@ -130,6 +133,10 @@ export function validateHousing(formData: FormData): {
   const address = stringField(formData, "address");
   const rentRaw = stringField(formData, "rent");
   const notes = stringField(formData, "notes");
+  const clearPhotos = formData.get("clearPhotos") === "on";
+  const existingPhotoCount = clearPhotos
+    ? 0
+    : Math.max(0, options.existingPhotoCount ?? 0);
 
   const peopleNeeded = parsePeople(peopleRaw);
   if (peopleNeeded === "invalid") {
@@ -163,12 +170,13 @@ export function validateHousing(formData: FormData): {
   }
 
   const savedAddress = address || null;
+  const photoCount = photos.length > 0 ? photos.length : existingPhotoCount;
   if (
     peopleNeeded === null &&
     savedAddress === null &&
     priceCents === null &&
     !notes &&
-    photos.length === 0
+    photoCount === 0
   ) {
     return {
       fieldErrors,

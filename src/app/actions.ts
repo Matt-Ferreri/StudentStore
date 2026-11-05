@@ -1,10 +1,13 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { findCampusId } from "@/lib/campuses";
+import { boardPath } from "@/lib/format";
+import { isUuid } from "@/lib/chat";
 import { displayNameFromEmail, normalizeMaristEmail } from "@/lib/marist-email";
-import type { CreateListingState } from "@/lib/types";
+import type { CreateListingState, ListingKind } from "@/lib/types";
 import { LISTING_IMAGES_BUCKET } from "@/lib/supabase";
 import { createSessionClient } from "@/lib/supabase-server";
 import {
@@ -178,6 +181,236 @@ export async function createHousing(
   redirect(`/${campus.slug}/listings/${listing.id}`);
 }
 
+export async function updateListing(
+  _previous: CreateListingState,
+  formData: FormData,
+): Promise<CreateListingState> {
+  const listingId = stringField(formData, "listingId");
+  if (!isUuid(listingId)) {
+    return { error: "This listing could not be found." };
+  }
+
+  const { fieldErrors, value } = validateListing(formData);
+  if (!value) {
+    return { fieldErrors };
+  }
+
+  const supabase = await createSessionClient();
+  if (!supabase) {
+    return {
+      error:
+        "Editing is unavailable until Supabase is configured. See the README for the required environment variables.",
+    };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Sign in with a Marist email before editing." };
+  }
+
+  const owned = await loadOwnedListing(supabase, listingId, user.id);
+  if (!owned) {
+    return { error: "You can only edit your own listings." };
+  }
+
+  if (owned.kind !== "for_sale") {
+    return { error: "This listing cannot be edited here." };
+  }
+
+  const clearPhotos = formData.get("clearPhotos") === "on";
+  const replacePhotos = value.photos.length > 0 || clearPhotos;
+
+  const { error: updateError } = await supabase
+    .from("listings")
+    .update({
+      title: value.title,
+      description: value.description,
+      price_cents: value.priceCents,
+      categories: value.categories,
+    })
+    .eq("id", listingId)
+    .eq("user_id", user.id);
+
+  if (updateError) {
+    return { error: "Could not save your changes. Try again." };
+  }
+
+  const { error: tradeDeleteError } = await supabase
+    .from("listing_trades")
+    .delete()
+    .eq("listing_id", listingId);
+
+  if (tradeDeleteError) {
+    return { error: "Could not update the trade items. Try again." };
+  }
+
+  if (value.tradeItems.length > 0) {
+    const { error: tradeError } = await supabase.from("listing_trades").insert(
+      value.tradeItems.map((label, index) => ({
+        listing_id: listingId,
+        label,
+        sort_order: index,
+      })),
+    );
+
+    if (tradeError) {
+      return { error: "Could not update the trade items. Try again." };
+    }
+  }
+
+  const { error: sectionDeleteError } = await supabase
+    .from("listing_sections")
+    .delete()
+    .eq("listing_id", listingId);
+
+  if (sectionDeleteError) {
+    return { error: "Could not update the sections. Try again." };
+  }
+
+  if (value.sections.length > 0) {
+    const sectionError = await saveListingSections(
+      supabase,
+      listingId,
+      value.sections,
+    );
+    if (sectionError) {
+      return { error: "Could not update the sections. Try again." };
+    }
+  }
+
+  if (replacePhotos) {
+    const photoError = await replaceListingPhotos(
+      supabase,
+      listingId,
+      value.photos,
+    );
+    if (photoError) {
+      return { error: photoError };
+    }
+  }
+
+  revalidatePath(`/${owned.campusSlug}/listings/${listingId}`);
+  revalidatePath(boardPath(owned.campusSlug, owned.kind));
+  redirect(`/${owned.campusSlug}/listings/${listingId}`);
+}
+
+export async function updateHousing(
+  _previous: CreateListingState,
+  formData: FormData,
+): Promise<CreateListingState> {
+  const listingId = stringField(formData, "listingId");
+  if (!isUuid(listingId)) {
+    return { error: "This post could not be found." };
+  }
+
+  const supabase = await createSessionClient();
+  if (!supabase) {
+    return {
+      error:
+        "Editing is unavailable until Supabase is configured. See the README for the required environment variables.",
+    };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Sign in with a Marist email before editing." };
+  }
+
+  const owned = await loadOwnedListing(supabase, listingId, user.id);
+  if (!owned) {
+    return { error: "You can only edit your own posts." };
+  }
+
+  if (owned.kind !== "housing") {
+    return { error: "This post cannot be edited here." };
+  }
+
+  const { fieldErrors, formError, value } = validateHousing(formData, {
+    existingPhotoCount: owned.imageCount,
+  });
+  if (!value) {
+    return { fieldErrors, error: formError };
+  }
+
+  const clearPhotos = formData.get("clearPhotos") === "on";
+  const replacePhotos = value.photos.length > 0 || clearPhotos;
+
+  const { error: updateError } = await supabase
+    .from("listings")
+    .update({
+      title: value.title,
+      description: value.description,
+      people_needed: value.peopleNeeded,
+      address: value.address,
+      price_cents: value.priceCents,
+    })
+    .eq("id", listingId)
+    .eq("user_id", user.id);
+
+  if (updateError) {
+    return { error: "Could not save your changes. Try again." };
+  }
+
+  if (replacePhotos) {
+    const photoError = await replaceListingPhotos(
+      supabase,
+      listingId,
+      value.photos,
+    );
+    if (photoError) {
+      return { error: photoError };
+    }
+  }
+
+  revalidatePath(`/${owned.campusSlug}/listings/${listingId}`);
+  revalidatePath(boardPath(owned.campusSlug, owned.kind));
+  redirect(`/${owned.campusSlug}/listings/${listingId}`);
+}
+
+async function loadOwnedListing(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSessionClient>>>,
+  listingId: string,
+  userId: string,
+): Promise<{ campusSlug: string; kind: ListingKind; imageCount: number } | null> {
+  const { data, error } = await supabase
+    .from("listings")
+    .select("kind, listing_images (id), campuses (slug)")
+    .eq("id", listingId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const row = data as {
+    kind: ListingKind;
+    listing_images: { id: string }[] | { id: string } | null;
+    campuses: { slug: string } | { slug: string }[] | null;
+  };
+
+  const campus = Array.isArray(row.campuses) ? row.campuses[0] : row.campuses;
+  if (!campus?.slug) {
+    return null;
+  }
+
+  const images = Array.isArray(row.listing_images)
+    ? row.listing_images
+    : row.listing_images
+      ? [row.listing_images]
+      : [];
+
+  return {
+    campusSlug: campus.slug,
+    kind: row.kind,
+    imageCount: images.length,
+  };
+}
+
 async function campusForPost(
   supabase: NonNullable<Awaited<ReturnType<typeof createSessionClient>>>,
   formData: FormData,
@@ -257,6 +490,68 @@ async function saveListingPhotos(
   listingId: string,
   photos: File[],
 ): Promise<string | null> {
+  const result = await uploadListingPhotos(supabase, listingId, photos);
+  if (result) {
+    await supabase.from("listings").delete().eq("id", listingId);
+    return "Could not save the photos, so the listing was not posted.";
+  }
+
+  return null;
+}
+
+async function replaceListingPhotos(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSessionClient>>>,
+  listingId: string,
+  photos: File[],
+): Promise<string | null> {
+  const { data: existing, error: existingError } = await supabase
+    .from("listing_images")
+    .select("storage_path")
+    .eq("listing_id", listingId);
+
+  if (existingError) {
+    return "Could not update the photos. Try again.";
+  }
+
+  const oldPaths = (existing ?? [])
+    .map((row) => row.storage_path as string)
+    .filter(Boolean);
+
+  if (oldPaths.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from(LISTING_IMAGES_BUCKET)
+      .remove(oldPaths);
+    if (storageError) {
+      return "Could not update the photos. Try again.";
+    }
+  }
+
+  const { error: deleteError } = await supabase
+    .from("listing_images")
+    .delete()
+    .eq("listing_id", listingId);
+
+  if (deleteError) {
+    return "Could not update the photos. Try again.";
+  }
+
+  if (photos.length === 0) {
+    return null;
+  }
+
+  const result = await uploadListingPhotos(supabase, listingId, photos);
+  if (result) {
+    return "Could not update the photos. Try again.";
+  }
+
+  return null;
+}
+
+async function uploadListingPhotos(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSessionClient>>>,
+  listingId: string,
+  photos: File[],
+): Promise<string | null> {
   const uploadedPaths: string[] = [];
 
   try {
@@ -266,7 +561,7 @@ async function saveListingPhotos(
         throw new Error("Unsupported photo type.");
       }
 
-      const storagePath = `${listingId}/${index}.${extension}`;
+      const storagePath = `${listingId}/${Date.now()}-${index}.${extension}`;
       const bytes = Buffer.from(await photo.arrayBuffer());
       const { error: uploadError } = await supabase.storage
         .from(LISTING_IMAGES_BUCKET)
@@ -295,8 +590,7 @@ async function saveListingPhotos(
     if (uploadedPaths.length > 0) {
       await supabase.storage.from(LISTING_IMAGES_BUCKET).remove(uploadedPaths);
     }
-    await supabase.from("listings").delete().eq("id", listingId);
-    return "Could not save the photos, so the listing was not posted.";
+    return "upload failed";
   }
 
   return null;

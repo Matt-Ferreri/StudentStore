@@ -178,6 +178,16 @@ export function viewerCanRemoveListing(
   );
 }
 
+export function viewerCanEditListing(
+  listing: Pick<Listing, "userId" | "kind">,
+  viewerId: string,
+): boolean {
+  return (
+    listing.userId === viewerId &&
+    (listing.kind === "for_sale" || listing.kind === "housing")
+  );
+}
+
 function rowsOf<T>(value: T[] | T | null | undefined): T[] {
   if (!value) {
     return [];
