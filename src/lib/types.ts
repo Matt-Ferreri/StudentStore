@@ -12,6 +12,7 @@ export const PRODUCT_CATEGORIES = [
   { slug: "school_supplies", label: "School supplies" },
   { slug: "dorm", label: "Dorm" },
   { slug: "athletic", label: "Athletic gear" },
+  { slug: "sports", label: "Sports" },
   { slug: "electronics", label: "Electronics" },
   { slug: "furniture", label: "Furniture" },
   { slug: "tickets", label: "Tickets" },
@@ -58,7 +59,7 @@ export type Listing = {
   peopleNeeded: number | null;
   address: string | null;
   priceCents: number | null;
-  category: ProductCategory | null;
+  categories: ProductCategory[];
   sections: ListingSection[];
   tradeItems: string[];
   posterName: string;

@@ -32,9 +32,10 @@ export default async function NewListingPage({
           Post a listing
         </h1>
         <p className="mt-2 text-ink">
-          Title, description, and category are required. You can add sections
-          of items, like Dorm needs with a TV and chairs. Price, photos, and
-          trades can be left blank.{" "}
+          Title, description, and at least one category are required. You can
+          pick more than one category, and add sections of items, like Dorm
+          needs with a TV and chairs. Price, photos, and trades can be left
+          blank.{" "}
           {campus.slug === "marist"
             ? "Your Marist email is the contact on the post."
             : "Your email is the contact on the post."}

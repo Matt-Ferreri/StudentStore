@@ -65,25 +65,29 @@ export function ListingForm({ campusSlug }: { campusSlug: string }) {
         <FieldError message={state.fieldErrors?.description} />
       </label>
 
-      <label className="block space-y-1">
-        <span className="text-sm font-medium text-ink">Category</span>
-        <select
-          name="category"
-          required
-          defaultValue=""
-          className={inputClass}
-        >
-          <option value="" disabled>
-            Choose a category
-          </option>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-ink">Categories</legend>
+        <p className="text-xs text-ink">
+          Pick every category that fits this listing.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
           {PRODUCT_CATEGORIES.map((category) => (
-            <option key={category.slug} value={category.slug}>
+            <label
+              key={category.slug}
+              className="flex items-center gap-2 text-sm text-ink"
+            >
+              <input
+                type="checkbox"
+                name="category"
+                value={category.slug}
+                className="size-4 accent-burgundy"
+              />
               {category.label}
-            </option>
+            </label>
           ))}
-        </select>
+        </div>
         <FieldError message={state.fieldErrors?.category} />
-      </label>
+      </fieldset>
 
       <Field
         label="Price"

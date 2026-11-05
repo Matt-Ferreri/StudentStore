@@ -41,7 +41,7 @@ export type ValidListing = {
   title: string;
   description: string;
   priceCents: number | null;
-  category: ProductCategory;
+  categories: ProductCategory[];
   sections: ValidListingSection[];
   tradeItems: string[];
   photos: File[];
@@ -68,7 +68,7 @@ export function validateListing(formData: FormData): {
   const title = stringField(formData, "title");
   const description = stringField(formData, "description");
   const priceRaw = stringField(formData, "price");
-  const categoryRaw = stringField(formData, "category");
+  const categories = readCategories(formData);
 
   if (!title) {
     fieldErrors.title = "Add a title.";
@@ -89,8 +89,8 @@ export function validateListing(formData: FormData): {
     fieldErrors.price = "Enter a price of $100,000 or less.";
   }
 
-  if (!isProductCategory(categoryRaw)) {
-    fieldErrors.category = "Choose a category.";
+  if (categories.length === 0) {
+    fieldErrors.category = "Choose at least one category.";
   }
 
   const sections = readSections(formData, fieldErrors);
@@ -100,7 +100,7 @@ export function validateListing(formData: FormData): {
   if (
     Object.keys(fieldErrors).length > 0 ||
     priceCents === "invalid" ||
-    !isProductCategory(categoryRaw)
+    categories.length === 0
   ) {
     return { fieldErrors, value: null };
   }
@@ -112,7 +112,7 @@ export function validateListing(formData: FormData): {
       title,
       description,
       priceCents,
-      category: categoryRaw,
+      categories,
       sections,
       tradeItems,
       photos,
@@ -191,6 +191,26 @@ export function validateHousing(formData: FormData): {
       photos,
     },
   };
+}
+
+function readCategories(formData: FormData): ProductCategory[] {
+  const seen = new Set<ProductCategory>();
+  const categories: ProductCategory[] = [];
+
+  for (const entry of formData.getAll("category")) {
+    if (typeof entry !== "string" || !isProductCategory(entry)) {
+      continue;
+    }
+
+    if (seen.has(entry)) {
+      continue;
+    }
+
+    seen.add(entry);
+    categories.push(entry);
+  }
+
+  return categories;
 }
 
 function readSections(

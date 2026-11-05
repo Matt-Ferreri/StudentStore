@@ -44,7 +44,7 @@ type ListingRow = {
   people_needed: number | null;
   address: string | null;
   price_cents: number | null;
-  category: string | null;
+  categories: string[] | null;
   listing_sections: SectionRow[] | SectionRow | null;
   listing_trades: TradeRow[] | null;
   poster_name: string;
@@ -64,7 +64,7 @@ const listingSelect = `
   people_needed,
   address,
   price_cents,
-  category,
+  categories,
   listing_sections (
     id,
     title,
@@ -100,7 +100,7 @@ export async function listListings(
     .eq("kind", kind);
 
   if (category) {
-    query = query.eq("category", category);
+    query = query.contains("categories", [category]);
   }
 
   const { data, error } = await query.order("created_at", { ascending: false });
@@ -202,8 +202,7 @@ function toListing(row: ListingRow): Listing {
     peopleNeeded: row.people_needed,
     address: row.address,
     priceCents: row.price_cents,
-    category:
-      row.category && isProductCategory(row.category) ? row.category : null,
+    categories: (row.categories ?? []).filter(isProductCategory),
     sections: rowsOf(row.listing_sections)
       .sort((left, right) => left.sort_order - right.sort_order)
       .map((section) => ({

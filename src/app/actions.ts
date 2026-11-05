@@ -54,7 +54,7 @@ export async function createListing(
       title: value.title,
       description: value.description,
       price_cents: value.priceCents,
-      category: value.category,
+      categories: value.categories,
       poster_name: displayNameFromEmail(email),
       contact: email,
       user_id: user.id,

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { SetupNotice } from "@/components/setup-notice";
 import { getCampus } from "@/lib/campuses";
-import { campusPath, categoryLabel, listingPriceLabel } from "@/lib/format";
+import { campusPath, categoryLabels, listingPriceLabel } from "@/lib/format";
 import { listListings } from "@/lib/listings";
 import {
   isProductCategory,
@@ -103,8 +103,8 @@ export async function ListingBoard({
                   )}
                   <div className="flex flex-1 flex-col gap-2 p-4">
                     <p className="text-xs font-medium uppercase tracking-wide text-burgundy">
-                      {listing.category
-                        ? categoryLabel(listing.category)
+                      {listing.categories.length > 0
+                        ? categoryLabels(listing.categories)
                         : "For sale"}
                       {listing.status === "sold" ? " · Sold" : ""}
                     </p>

@@ -10,7 +10,7 @@ import { parseChatId } from "@/lib/chat";
 import {
   boardPath,
   campusPath,
-  categoryLabel,
+  categoryLabels,
   formatPostedAt,
   formatPrice,
   kindLabel,
@@ -61,8 +61,8 @@ async function ListingDetail({ params, searchParams }: ListingPageProps) {
   const wholePostPrice =
     !housing && listing.priceCents !== null && listing.sections.length > 0;
   const backHref =
-    listing.kind === "for_sale" && listing.category
-      ? `${campusPath(campus, "/for-sale")}?category=${listing.category}`
+    listing.kind === "for_sale" && listing.categories.length === 1
+      ? `${campusPath(campus, "/for-sale")}?category=${listing.categories[0]}`
       : boardPath(campus, listing.kind);
 
   return (
@@ -81,9 +81,9 @@ async function ListingDetail({ params, searchParams }: ListingPageProps) {
           {kindLabel(listing.kind)}
           {listing.kind === "for_sale" && listing.status === "sold" ? " · Sold" : ""}
         </p>
-        {listing.category ? (
+        {listing.categories.length > 0 ? (
           <p className="text-sm font-medium text-ink">
-            {categoryLabel(listing.category)}
+            {categoryLabels(listing.categories)}
           </p>
         ) : null}
         <h1 className="text-3xl font-semibold tracking-tight text-ink">

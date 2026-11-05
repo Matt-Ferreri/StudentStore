@@ -78,6 +78,10 @@ export function categoryLabel(category: ProductCategory): string {
   return match ? match.label : category;
 }
 
+export function categoryLabels(categories: ProductCategory[]): string {
+  return categories.map(categoryLabel).join(" · ");
+}
+
 export function campusPath(slug: string, path = ""): string {
   if (!path || path === "/") {
     return `/${slug}`;
