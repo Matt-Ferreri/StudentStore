@@ -3,6 +3,7 @@
 import { useActionState, useState, type InputHTMLAttributes } from "react";
 
 import { createListing, updateListing } from "@/app/actions";
+import { submitWithCompressedPhotos } from "@/lib/compress-photos";
 import { formatPriceInput } from "@/lib/format";
 import {
   PRODUCT_CATEGORIES,
@@ -66,8 +67,10 @@ export function ListingForm({
   listing?: Listing;
 }) {
   const editing = Boolean(listing);
+  const serverAction = editing ? updateListing : createListing;
   const [state, action, pending] = useActionState(
-    editing ? updateListing : createListing,
+    (previous: CreateListingState, formData: FormData) =>
+      submitWithCompressedPhotos(serverAction, previous, formData),
     initialState,
   );
   const [acceptTrades, setAcceptTrades] = useState(
@@ -417,7 +420,8 @@ export function ListingForm({
             className="block w-full text-sm text-ink file:mr-3 file:rounded-full file:border-0 file:bg-sage file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink"
           />
           <p className="text-xs text-ink">
-            Up to {MAX_PHOTOS} photos. JPEG, PNG, or WebP. 5 MB each.
+            Up to {MAX_PHOTOS} photos. JPEG, PNG, or WebP. Photos are resized
+            automatically for upload.
             {listing && listing.images.length > 0
               ? " Leave blank to keep the current photos."
               : ""}

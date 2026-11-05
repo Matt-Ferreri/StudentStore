@@ -3,6 +3,7 @@
 import { useActionState, type InputHTMLAttributes } from "react";
 
 import { createHousing, updateHousing } from "@/app/actions";
+import { submitWithCompressedPhotos } from "@/lib/compress-photos";
 import { formatPriceInput } from "@/lib/format";
 import type { CreateListingState, Listing } from "@/lib/types";
 import {
@@ -22,8 +23,10 @@ export function HousingForm({
   listing?: Listing;
 }) {
   const editing = Boolean(listing);
+  const serverAction = editing ? updateHousing : createHousing;
   const [state, action, pending] = useActionState(
-    editing ? updateHousing : createHousing,
+    (previous: CreateListingState, formData: FormData) =>
+      submitWithCompressedPhotos(serverAction, previous, formData),
     initialState,
   );
 
@@ -133,8 +136,8 @@ export function HousingForm({
             className="block w-full text-sm text-ink file:mr-3 file:rounded-full file:border-0 file:bg-sage file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink"
           />
           <p className="text-xs text-ink">
-            Up to {MAX_PHOTOS} photos of the house. JPEG, PNG, or WebP. 5 MB
-            each.
+            Up to {MAX_PHOTOS} photos of the house. JPEG, PNG, or WebP. Photos
+            are resized automatically for upload.
             {listing && listing.images.length > 0
               ? " Leave blank to keep the current photos."
               : ""}

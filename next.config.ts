@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   experimental: {
     serverActions: {
-      // Four optional photos, up to 5 MB each, plus multipart overhead.
+      // Client compresses photos before submit; limit covers multipart overhead.
       bodySizeLimit: "22mb",
     },
   },
